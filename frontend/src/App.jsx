@@ -6,20 +6,22 @@ import Sidebar     from './components/Sidebar';
 import AuthModal   from './components/AuthModal';
 import { supabase } from './lib/supabase';
 
-import HomePage    from './pages/HomePage';
-import DashboardPage from './pages/DashboardPage';
-import AnalysisPage  from './pages/AnalysisPage';
-import ScreenerPage  from './pages/ScreenerPage';
-import JournalPage   from './pages/JournalPage';
+import HomePage       from './pages/HomePage';
+import DashboardPage  from './pages/DashboardPage';
+import AnalysisPage   from './pages/AnalysisPage';
+import ScreenerPage   from './pages/ScreenerPage';
+import JournalPage    from './pages/JournalPage';
+import LazyPickerPage from './pages/LazyPickerPage';
 
 import './App.css';
 
 const PAGE_TITLES = {
-  '/':          'AlphaVision',
-  '/dashboard': '戰情中心',
-  '/analysis':  '個股分析',
-  '/screener':  '選股濾網',
-  '/journal':   '投資手札',
+  '/':            'AlphaVision',
+  '/dashboard':   '戰情中心',
+  '/analysis':    '個股分析',
+  '/screener':    '選股濾網',
+  '/journal':     '投資手札',
+  '/lazy-picker': '零股選股器',
 };
 
 export default function App() {
@@ -138,6 +140,7 @@ export default function App() {
                 onShowAuth={() => setShowAuth(true)}
               />
             } />
+            <Route path="/lazy-picker" element={<LazyPickerPage />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

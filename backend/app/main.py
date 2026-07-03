@@ -340,6 +340,23 @@ def generate_trade_review(req: TradeReviewRequest):
         raise HTTPException(status_code=500, detail=f"AI 生成失敗: {e}")
 
 
+# ── 零股懶人選股器 ───────────────────────────────────────────
+class LazyPickerRequest(BaseModel):
+    budget:    float = 5000
+    risk_pref: str   = "平衡型"
+
+@app.post("/api/v1/lazy-picker")
+def lazy_picker_endpoint(req: LazyPickerRequest):
+    """根據預算 + 風險偏好，AI 篩選零股標的附職人觀點"""
+    from services.lazy_picker import run_lazy_picker
+    if req.budget < 100:
+        raise HTTPException(status_code=400, detail="預算至少 100 元")
+    picks = run_lazy_picker(req.budget, req.risk_pref)
+    if not picks:
+        raise HTTPException(status_code=404, detail="目前市況無符合篩選條件的標的，建議稍後再試或放寬預算")
+    return {"status": "success", "budget": req.budget, "risk_pref": req.risk_pref, "picks": picks}
+
+
 # ── 回測 ─────────────────────────────────────────────────────
 @app.post("/api/v1/backtest")
 def backtest(

@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const NAV = [
+  { icon: '💰', label: '零股選股器',  path: '/lazy-picker', featured: true },
   { icon: '📊', label: '戰情中心',    path: '/dashboard' },
   { icon: '🔍', label: '個股分析',    path: '/analysis' },
   { icon: '🔎', label: '選股濾網',    path: '/screener' },
@@ -66,13 +67,16 @@ export default function Sidebar({ open, onClose }) {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 14,
                       width: '100%', padding: '13px 16px',
-                      background: active ? 'rgba(163,144,124,0.12)' : 'none',
+                      background: item.featured && !active
+                        ? 'rgba(184,92,56,0.06)'
+                        : active ? 'rgba(163,144,124,0.12)' : 'none',
                       border: 'none', cursor: 'pointer',
-                      fontSize: 15, color: active ? '#3E3A39' : '#857870',
+                      fontSize: 15,
+                      color: active ? '#3E3A39' : item.featured ? '#B85C38' : '#857870',
                       fontFamily: "'Noto Serif TC', serif",
                       textAlign: 'left', borderRadius: 6,
                       transition: 'all 0.2s',
-                      borderLeft: active ? '2px solid #A3907C' : '2px solid transparent',
+                      borderLeft: active ? '2px solid #A3907C' : item.featured ? '2px solid rgba(184,92,56,0.3)' : '2px solid transparent',
                     }}
                     onMouseEnter={e => !active && (e.currentTarget.style.background = 'rgba(163,144,124,0.06)')}
                     onMouseLeave={e => !active && (e.currentTarget.style.background = 'none')}

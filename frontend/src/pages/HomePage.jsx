@@ -102,16 +102,49 @@ export default function HomePage({ user }) {
 
       {/* ── Feature cards ── */}
       <section style={{ padding: '80px 52px 100px', maxWidth: 1200, margin: '0 auto' }}>
-        <motion.div {...FU()} style={{ marginBottom: 56, textAlign: 'center' }}>
+        <motion.div {...FU()} style={{ marginBottom: 40, textAlign: 'center' }}>
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
             Platform Modules
           </div>
           <h2 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 28, fontWeight: 400, color: '#3E3A39', margin: 0 }}>
-            四大功能模組
+            五大功能模組
           </h2>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+        {/* Featured: Lazy Picker */}
+        <motion.div
+          {...FU(0.04)}
+          onClick={() => nav('/lazy-picker')}
+          whileHover={{ y: -3, transition: { duration: 0.4 } }}
+          onMouseEnter={e => e.currentTarget.style.boxShadow = '0 16px 56px rgba(0,0,0,0.13)'}
+          onMouseLeave={e => e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.08)'}
+          style={{
+            background: '#3E3A39', cursor: 'pointer', marginBottom: 2,
+            padding: '44px 52px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            transition: 'box-shadow 0.4s',
+          }}
+        >
+          <div>
+            <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: '#857870', marginBottom: 14 }}>
+              ✦ New · 零股懶人神器
+            </div>
+            <h3 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 26, fontWeight: 400, color: '#F9F6F0', margin: '0 0 12px' }}>
+              五千元零股選股器
+            </h3>
+            <p style={{ fontSize: 14, color: '#857870', lineHeight: 1.8, margin: 0 }}>
+              輸入預算 → AI 篩選 60MA 多頭 + 籌碼集中標的 → 告訴你買幾股、剩多少
+            </p>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 52 }}>
+            <div style={{ fontSize: 52 }}>💰</div>
+            <div style={{ color: '#B85C38', fontSize: 13, fontFamily: "'Noto Serif TC', serif", marginTop: 10, letterSpacing: 1 }}>
+              立即使用 →
+            </div>
+          </div>
+        </motion.div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, marginTop: 2 }}>
           {CARDS.map((c, i) => (
             <motion.div
               key={c.path}
