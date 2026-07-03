@@ -26,6 +26,7 @@ from news_scraper            import get_filtered_news
 from line_bot                import handle_webhook
 from scheduler               import create_scheduler
 from services.smart_money    import get_smart_money_cost
+from services.ta_analysis    import compute_ta, get_candles as _get_candles
 
 try:
     from openai import OpenAI
@@ -136,6 +137,83 @@ def get_smart_money(stock_id: str):
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
     return {"status": "success", **result}
+
+
+# ── Sprint：K 線 + TA 型態 ───────────────────────────────────
+@app.get("/api/v1/chart/candles/{stock_id}")
+def get_chart_candles(stock_id: str, period: str = Query("3mo")):
+    """K 線 OHLC 資料 + TA 型態標籤"""
+    if not stock_id.isdigit() or len(stock_id) not in (4, 5, 6):
+        raise HTTPException(status_code=400, detail="股票代號格式錯誤")
+    candles = _get_candles(stock_id, period)
+    if not candles:
+        raise HTTPException(status_code=404, detail="無法取得行情資料")
+    ta = compute_ta(stock_id)
+    return {
+        "status": "success", "stock_id": stock_id,
+        "candles": candles,
+        "ta_patterns": ta.get("ta_patterns", []),
+        "indicators":  ta.get("indicators", {}),
+    }
+
+
+@app.get("/api/v1/chip/ta/{stock_id}")
+def get_ta_analysis(stock_id: str):
+    """個股 TA 指標 + 型態標籤"""
+    if not stock_id.isdigit() or len(stock_id) not in (4, 5, 6):
+        raise HTTPException(status_code=400, detail="股票代號格式錯誤")
+    result = compute_ta(stock_id)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return {"status": "success", **result}
+
+
+# ── Sprint：選股濾網 ─────────────────────────────────────────
+_SCREEN_STOCKS = [
+    "2330","2317","2454","2308","2382","3711","2881","2882",
+    "2886","2891","2303","1301","6505","2002","2207","2912",
+    "5871","2884","6669","2379","3034","2344","2395","3008",
+]
+
+class ScreenerRequest(BaseModel):
+    ma_status:      str = "all"
+    rsi_condition:  str = "all"
+    macd_condition: str = "all"
+
+@app.post("/api/v1/screener")
+def run_screener(req: ScreenerRequest):
+    """複合 TA 條件選股（多執行緒平行處理）"""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _check(sid: str):
+        try:
+            ta  = compute_ta(sid)
+            if "error" in ta:
+                return None
+            ind = ta["indicators"]
+
+            if req.ma_status == "above_ma5"         and not ind.get("above_ma5"):   return None
+            if req.ma_status == "above_ma20"         and not ind.get("above_ma20"):  return None
+            if req.ma_status == "above_ma60"         and not ind.get("above_ma60"):  return None
+            if req.ma_status == "bullish_alignment"  and not ind.get("bullish_alignment"): return None
+
+            if req.rsi_condition == "oversold"   and (ind.get("rsi") or 50) >= 30: return None
+            if req.rsi_condition == "overbought" and (ind.get("rsi") or 50) <= 70: return None
+
+            if req.macd_condition == "bullish":
+                if (ind.get("macd") or 0) <= (ind.get("macd_signal") or 0): return None
+            if req.macd_condition == "golden_cross":
+                if not any(p["label"] == "MACD 黃金交叉" for p in ta.get("ta_patterns", [])): return None
+
+            return ta
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        raw = list(pool.map(_check, _SCREEN_STOCKS))
+
+    valid = [r for r in raw if r is not None]
+    return {"status": "success", "results": valid, "count": len(valid), "screened": len(_SCREEN_STOCKS)}
 
 
 # ── Task-021：新聞抗噪濾鏡 ───────────────────────────────────

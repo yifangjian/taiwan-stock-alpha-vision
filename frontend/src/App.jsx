@@ -12,6 +12,8 @@ import DistributionChart  from './components/DistributionChart';
 import SmartMoneyChart    from './components/SmartMoneyChart';
 import NewsFilter         from './components/NewsFilter';
 import Sidebar           from './components/Sidebar';
+import ArtisanChart      from './components/ArtisanChart';
+import Screener          from './components/Screener';
 import JournalTimeline   from './components/JournalTimeline';
 import BacktestModal      from './components/BacktestModal';
 import AuthModal          from './components/AuthModal';
@@ -70,6 +72,7 @@ export default function App() {
 
   const [showBacktest,  setShowBacktest]  = useState(false);
   const [sidebarOpen,   setSidebarOpen]   = useState(false);
+  const [showScreener,  setShowScreener]  = useState(false);
   const [user,          setUser]          = useState(null);
   const [showAuth,     setShowAuth]     = useState(false);
   const [watchlist,    setWatchlist]    = useState([]);
@@ -173,6 +176,13 @@ export default function App() {
           <div className="nav-logo">AlphaVision</div>
         </div>
         <div className="nav-right">
+          <motion.button
+            onClick={() => setShowScreener(true)}
+            whileHover={{ y: -1, transition: { duration: 0.3 } }}
+            style={{ background: 'none', border: '1px solid #CFC9BF', color: '#857870', padding: '6px 14px', fontSize: '12px', cursor: 'pointer', fontFamily: 'monospace', letterSpacing: '1px', marginRight: '8px' }}
+          >
+            🔎 選股
+          </motion.button>
           {supabase && user ? (
             <>
               <span className="nav-user">{user.email}</span>
@@ -409,6 +419,11 @@ export default function App() {
           </motion.div>
         )}
 
+        {/* K 線畫布 */}
+        {stockHealth && (
+          <ArtisanChart stockId={stockHealth.stock_id} />
+        )}
+
         {/* 主力成本帶 */}
         {smartMoney && (
           <motion.div style={{ marginTop: '28px' }} {...FU(0.05)}>
@@ -504,8 +519,9 @@ export default function App() {
         <p>數據僅供參考，不構成任何投資建議</p>
       </footer>
 
-      {showBacktest && <BacktestModal onClose={() => setShowBacktest(false)} />}
-      {showAuth     && <AuthModal     onClose={() => setShowAuth(false)} />}
+      {showBacktest  && <BacktestModal  onClose={() => setShowBacktest(false)} />}
+      {showAuth      && <AuthModal      onClose={() => setShowAuth(false)} />}
+      {showScreener  && <Screener       open={showScreener} onClose={() => setShowScreener(false)} />}
     </div>
   );
 }
