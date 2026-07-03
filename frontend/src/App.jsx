@@ -11,7 +11,8 @@ import PositionCalculator from './components/PositionCalculator';
 import DistributionChart  from './components/DistributionChart';
 import SmartMoneyChart    from './components/SmartMoneyChart';
 import NewsFilter         from './components/NewsFilter';
-import TradeJournal       from './components/TradeJournal';
+import Sidebar           from './components/Sidebar';
+import JournalTimeline   from './components/JournalTimeline';
 import BacktestModal      from './components/BacktestModal';
 import AuthModal          from './components/AuthModal';
 import { supabase }       from './lib/supabase';
@@ -67,8 +68,9 @@ export default function App() {
   const [smartMoney,   setSmartMoney]   = useState(null);
   const [newsData,     setNewsData]     = useState(null);
 
-  const [showBacktest, setShowBacktest] = useState(false);
-  const [user,         setUser]         = useState(null);
+  const [showBacktest,  setShowBacktest]  = useState(false);
+  const [sidebarOpen,   setSidebarOpen]   = useState(false);
+  const [user,          setUser]          = useState(null);
   const [showAuth,     setShowAuth]     = useState(false);
   const [watchlist,    setWatchlist]    = useState([]);
 
@@ -153,9 +155,23 @@ export default function App() {
   return (
     <div style={{ background: '#F9F6F0' }}>
 
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
       {/* ── Navbar ── */}
       <nav className="navbar">
-        <div className="nav-logo">AlphaVision</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Hamburger */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            aria-label="開啟選單"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}
+          >
+            <div style={{ width: 22, height: 1, background: '#3E3A39' }} />
+            <div style={{ width: 15, height: 1, background: '#3E3A39' }} />
+            <div style={{ width: 22, height: 1, background: '#3E3A39' }} />
+          </button>
+          <div className="nav-logo">AlphaVision</div>
+        </div>
         <div className="nav-right">
           {supabase && user ? (
             <>
@@ -177,7 +193,11 @@ export default function App() {
           Taiwan Stock Intelligence Platform
         </motion.div>
         <motion.h1 className="hero-title" {...FU(0.1)}>
-          看穿市場<br /><em>比主力早一步</em>
+          {user ? (
+            <>Hi, {user.email?.split('@')[0] || '投資者'}<br /><em>歡迎回來</em></>
+          ) : (
+            <>看穿市場<br /><em>比主力早一步</em></>
+          )}
         </motion.h1>
         <div className="hero-rule-mid" />
         <motion.p className="hero-sub" {...FU(0.2)}>
@@ -302,7 +322,7 @@ export default function App() {
       <hr className="full-divider" />
 
       {/* ── #03 個股健檢 ── */}
-      <div className="section-wrap">
+      <div id="s03" className="section-wrap">
         <motion.div className="section-head" {...FU()}>
           <span className="section-num">#03</span>
           <div>
@@ -444,31 +464,31 @@ export default function App() {
 
       <hr className="full-divider" />
 
-      {/* ── #06 交易覆盤日記 ── */}
-      <div className="section-wrap">
+      {/* ── #06 投資手札 ── */}
+      <div id="s06" className="section-wrap">
         <motion.div className="section-head" {...FU()}>
           <span className="section-num">#06</span>
           <div>
-            <h2 className="section-title">AI 交易覆盤日記</h2>
-            <p className="section-desc">記錄每筆交易，AI 對照景氣燈號給出直白評語</p>
+            <h2 className="section-title">投資時光軸手札</h2>
+            <p className="section-desc">記錄每筆交易心得，AI 評語 × 職人沉澱報告</p>
           </div>
         </motion.div>
 
         {supabase && user ? (
           <motion.div {...FU(0.05)}>
-            <TradeJournal supabase={supabase} user={user} />
+            <JournalTimeline supabase={supabase} user={user} />
           </motion.div>
         ) : (
           <motion.div
             {...FU(0.05)}
             style={{
-              padding: '48px', textAlign: 'center',
+              padding: '56px', textAlign: 'center',
               background: '#FFFFFF', border: '1px solid #EDE9E2',
               boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
             }}
           >
             <p style={{ fontFamily: "'Noto Serif TC', serif", color: '#857870', fontSize: '16px', marginBottom: '20px' }}>
-              登入後才能使用交易覆盤日記
+              登入後才能開啟你的投資手札
             </p>
             <motion.button className="btn-primary" onClick={() => setShowAuth(true)}
               whileHover={{ y: -2, backgroundColor: '#9E4E2F', transition: { duration: 0.4 } }}>

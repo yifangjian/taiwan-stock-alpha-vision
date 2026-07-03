@@ -147,6 +147,66 @@ def get_news_filter(stock_id: str):
     return {"status": "success", **get_filtered_news(stock_id)}
 
 
+# ── Sprint：單筆 AI 評語 ─────────────────────────────────────
+class EntryFeedbackRequest(BaseModel):
+    stock_symbol: str
+    action:       str
+    note:         str
+
+@app.post("/api/v1/journal/entry-feedback")
+def get_entry_feedback(req: EntryFeedbackRequest):
+    """針對單筆手札，用 GPT 生成直白評語"""
+    prompt = (
+        f"你是直言不諱的台股交易教練。\n"
+        f"用戶記錄了以下交易：\n"
+        f"- 股票：{req.stock_symbol}\n"
+        f"- 動作：{req.action}\n"
+        f"- 筆記：{req.note}\n\n"
+        f"請用 50 字以內的繁體中文給出有建設性的評語（可以毒舌但要有邏輯）。"
+        f"直接切入重點，不需要客套。"
+    )
+    if not _openai:
+        return {"feedback": f"（AI 未連線）{req.action} {req.stock_symbol}，筆記已記錄。"}
+    try:
+        result = _openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return {"feedback": result.choices[0].message.content.strip()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 生成失敗: {e}")
+
+
+# ── Sprint：職人沉澱報告 ──────────────────────────────────────
+class InsightsRequest(BaseModel):
+    tag_counts:  dict
+    entry_count: int
+
+@app.post("/api/v1/journal/insights")
+def get_journal_insights(req: InsightsRequest):
+    """根據歷史標籤統計，生成週期性 AI 操作模式報告"""
+    if not req.tag_counts:
+        return {"insights": "尚無足夠標籤資料，繼續記錄幾筆後再試。"}
+    tag_str = "、".join(f"{k}（{v}次）" for k, v in sorted(req.tag_counts.items(), key=lambda x: -x[1]))
+    prompt = (
+        f"根據用戶的投資日記，標籤統計如下：{tag_str}。"
+        f"共 {req.entry_count} 筆記錄。\n\n"
+        f"請用 100 字以內繁體中文，"
+        f"指出用戶的主要操作習慣模式與一個最需要改善的地方。"
+        f"語氣像職人師傅教徒弟：犀利但有溫度。直接開始分析，不需要開場白。"
+    )
+    if not _openai:
+        return {"insights": f"（AI 未連線）共記錄 {req.entry_count} 筆，標籤：{tag_str}。"}
+    try:
+        result = _openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return {"insights": result.choices[0].message.content.strip()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 生成失敗: {e}")
+
+
 # ── Task-022：AI 交易覆盤 ────────────────────────────────────
 class TradeReviewRequest(BaseModel):
     stock_id:   str
