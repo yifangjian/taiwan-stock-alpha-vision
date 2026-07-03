@@ -1,13 +1,16 @@
 import os
 import sys
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_app_dir      = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(_project_root, "data-pipeline", "scrapers"))
+sys.path.append(_app_dir)   # 讓 line_bot / scheduler 可直接 import
 
 from dotenv import load_dotenv
 load_dotenv(os.path.join(_project_root, ".env"))
@@ -18,11 +21,24 @@ from sentiment_analyzer import analyze_ptt_sentiment
 from stock_health_scraper import get_stock_health
 from tdcc_scraper import fetch_tdcc_distribution
 from backtest_engine import run_backtest
+from line_bot import handle_webhook
+from scheduler import create_scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler = create_scheduler()
+    scheduler.start()
+    print("[Scheduler] 每日 LINE 推播排程已啟動（16:00 Asia/Taipei）")
+    yield
+    scheduler.shutdown(wait=False)
+
 
 app = FastAPI(
     title="AlphaVision Taiwan API",
     description="專為台股散戶打造的機構級籌碼與宏觀決策平台 API",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -78,7 +94,6 @@ def get_institutional_chip(
 @app.get("/api/v1/sentiment/ptt")
 def get_ptt_sentiment():
     """PTT 股板爬蟲 + OpenAI 情緒分析，附白話操作建議 eli5_advice"""
-    # 取得景氣與法人資料作為 AI 的額外上下文
     macro_score, macro_label, chip_net_billion = None, None, None
     try:
         macro_df = fetch_ndc_business_cycle_indicators()
@@ -127,8 +142,8 @@ def get_stock_distribution(stock_id: str):
 
 @app.post("/api/v1/backtest")
 def backtest(
-    entry_score: int = Query(16, description="進場閾值（燈號分數 <= 此值買入）"),
-    exit_score:  int = Query(38, description="出場閾值（燈號分數 >= 此值賣出）"),
+    entry_score: int   = Query(16,        description="進場閾值（燈號分數 <= 此值買入）"),
+    exit_score:  int   = Query(38,        description="出場閾值（燈號分數 >= 此值賣出）"),
     capital:     float = Query(1_000_000, description="初始資金（元）"),
 ):
     """景氣燈號 × 0050 無程式碼策略回測"""
@@ -138,6 +153,23 @@ def backtest(
     if "error" in result:
         raise HTTPException(status_code=500, detail=result["error"])
     return {"status": "success", **result}
+
+
+@app.post("/webhook/line", include_in_schema=False)
+async def line_webhook(request: Request):
+    """
+    LINE Webhook：先讀取 body（一次），再傳給 handler 驗證簽章。
+    避免 Starlette body-consumed RuntimeError 的關鍵在於此處統一讀取。
+    """
+    body      = await request.body()          # 讀一次，後續不再碰 request
+    signature = request.headers.get("X-Line-Signature", "")
+    try:
+        handle_webhook(body.decode("utf-8"), signature)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    return "OK"
 
 
 if __name__ == "__main__":

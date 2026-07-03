@@ -7,26 +7,70 @@ import {
 import PositionCalculator from './components/PositionCalculator';
 import DistributionChart from './components/DistributionChart';
 import BacktestModal from './components/BacktestModal';
+import AuthModal from './components/AuthModal';
+import { supabase } from './lib/supabase';
 import './App.css';
 
-const API = 'http://127.0.0.1:8000';
+const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 function App() {
-  const [macroData, setMacroData] = useState([]);
-  const [chipData, setChipData] = useState([]);
+  const [macroData, setMacroData]       = useState([]);
+  const [chipData, setChipData]         = useState([]);
   const [sentimentData, setSentimentData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]           = useState(true);
 
   // 個股健檢
-  const [stockInput, setStockInput] = useState('');
-  const [stockHealth, setStockHealth] = useState(null);
+  const [stockInput, setStockInput]     = useState('');
+  const [stockHealth, setStockHealth]   = useState(null);
   const [stockLoading, setStockLoading] = useState(false);
-  const [stockError, setStockError] = useState('');
+  const [stockError, setStockError]     = useState('');
   const [distribution, setDistribution] = useState(null);
 
   // 回測 Modal
   const [showBacktest, setShowBacktest] = useState(false);
 
+  // 會員系統
+  const [user, setUser]                 = useState(null);
+  const [showAuth, setShowAuth]         = useState(false);
+  const [watchlist, setWatchlist]       = useState([]);
+
+  // ── 會員狀態監聽 ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 登入後自動載入自選股
+  useEffect(() => {
+    if (!user || !supabase) { setWatchlist([]); return; }
+    loadWatchlist();
+  }, [user]);
+
+  const loadWatchlist = async () => {
+    const { data } = await supabase
+      .from('user_portfolios')
+      .select('stock_id')
+      .order('created_at', { ascending: true });
+    setWatchlist(data?.map(r => r.stock_id) ?? []);
+  };
+
+  const addToWatchlist = async (stockId) => {
+    if (!user || !supabase || watchlist.includes(stockId)) return;
+    await supabase.from('user_portfolios').insert({ user_id: user.id, stock_id: stockId });
+    setWatchlist(prev => [...prev, stockId]);
+  };
+
+  const removeFromWatchlist = async (stockId) => {
+    if (!user || !supabase) return;
+    await supabase.from('user_portfolios').delete().eq('user_id', user.id).eq('stock_id', stockId);
+    setWatchlist(prev => prev.filter(s => s !== stockId));
+  };
+
+  // ── 初始資料載入 ──────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -53,17 +97,18 @@ function App() {
     return '#f59e0b';
   };
 
-  const handleStockSearch = async () => {
-    if (!stockInput.trim()) return;
-    const id = stockInput.trim();
+  const handleStockSearch = async (id) => {
+    const stockId = (id || stockInput).trim();
+    if (!stockId) return;
+    if (!id) setStockInput(stockId);
     setStockLoading(true);
     setStockHealth(null);
     setDistribution(null);
     setStockError('');
     try {
       const [healthRes, distRes] = await Promise.all([
-        axios.get(`${API}/api/v1/chip/stock/${id}`),
-        axios.get(`${API}/api/v1/chip/distribution/${id}`).catch(() => null),
+        axios.get(`${API}/api/v1/chip/stock/${stockId}`),
+        axios.get(`${API}/api/v1/chip/distribution/${stockId}`).catch(() => null),
       ]);
       setStockHealth(healthRes.data);
       if (distRes) setDistribution(distRes.data);
@@ -84,12 +129,39 @@ function App() {
 
   return (
     <div style={{ padding: '30px', backgroundColor: '#0f172a', minHeight: '100vh', color: '#f8fafc', fontFamily: 'sans-serif' }}>
-      <header style={{ borderBottom: '1px solid #334155', paddingBottom: '20px', marginBottom: '24px' }}>
-        <h1 style={{ margin: 0, color: '#38bdf8' }}>AlphaVision Pro 戰情中心</h1>
-        <p style={{ margin: '8px 0 0', color: '#94a3b8' }}>台股宏觀與籌碼透視系統</p>
+
+      {/* ── Header ── */}
+      <header style={{
+        borderBottom: '1px solid #334155', paddingBottom: '20px', marginBottom: '24px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <div>
+          <h1 style={{ margin: 0, color: '#38bdf8' }}>AlphaVision Pro 戰情中心</h1>
+          <p style={{ margin: '8px 0 0', color: '#94a3b8' }}>台股宏觀與籌碼透視系統</p>
+        </div>
+        {supabase && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {user ? (
+              <>
+                <span style={{ color: '#94a3b8', fontSize: '13px' }}>{user.email}</span>
+                <button onClick={() => supabase.auth.signOut()} style={{
+                  padding: '7px 16px', fontSize: '14px', cursor: 'pointer',
+                  backgroundColor: 'transparent', color: '#94a3b8',
+                  border: '1px solid #475569', borderRadius: '8px',
+                }}>登出</button>
+              </>
+            ) : (
+              <button onClick={() => setShowAuth(true)} style={{
+                padding: '8px 20px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer',
+                backgroundColor: '#1e40af', color: '#bae6fd',
+                border: '1px solid #3b82f6', borderRadius: '8px',
+              }}>🔑 登入 / 註冊</button>
+            )}
+          </div>
+        )}
       </header>
 
-      {/* Task-010：eli5 白話建議跑馬燈 */}
+      {/* Task-010：eli5 白話建議 */}
       {sentimentData?.eli5_advice && (
         <div style={{
           backgroundColor: '#1e3a5f', border: '1px solid #38bdf8',
@@ -169,9 +241,36 @@ function App() {
         </div>
       </div>
 
-      {/* Task-012：個股健檢 */}
+      {/* Task-012 + Task-016：個股健檢 + 自選股 */}
       <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '24px' }}>
         <h2 style={{ marginTop: 0, color: '#e2e8f0' }}>🔍 檢驗我的持股</h2>
+
+        {/* 自選股快速列表 */}
+        {user && watchlist.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px' }}>📌 我的自選股</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {watchlist.map(sid => (
+                <div key={sid} style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  backgroundColor: '#0f172a', border: '1px solid #475569',
+                  borderRadius: '20px', padding: '4px 12px',
+                }}>
+                  <button onClick={() => handleStockSearch(sid)} style={{
+                    background: 'none', border: 'none', color: '#38bdf8',
+                    fontSize: '14px', cursor: 'pointer', padding: 0, fontWeight: 'bold',
+                  }}>{sid}</button>
+                  <button onClick={() => removeFromWatchlist(sid)} style={{
+                    background: 'none', border: 'none', color: '#64748b',
+                    fontSize: '13px', cursor: 'pointer', padding: 0, lineHeight: 1,
+                  }}>✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 搜尋列 */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
           <input
             style={{
@@ -185,7 +284,7 @@ function App() {
             onKeyDown={(e) => e.key === 'Enter' && handleStockSearch()}
           />
           <button
-            onClick={handleStockSearch}
+            onClick={() => handleStockSearch()}
             disabled={stockLoading}
             style={{
               padding: '10px 24px', fontSize: '16px', cursor: 'pointer',
@@ -202,32 +301,55 @@ function App() {
         {distribution && <DistributionChart data={distribution.data} stockId={distribution.stock_id} />}
 
         {stockHealth && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            {[
-              { label: '外資短線態度', value: stockHealth.foreign_status, ok: stockHealth.foreign_bullish },
-              { label: '股價 vs MA20', value: stockHealth.price_status, ok: stockHealth.above_ma20 },
-              {
-                label: `綜合結論（${stockHealth.stock_id}）`,
-                value: stockHealth.conclusion,
-                detail: stockHealth.conclusion_detail,
-                color: signalColor[stockHealth.signal],
-              },
-            ].map((item, i) => (
-              <div key={i} style={{
-                backgroundColor: '#0f172a', padding: '16px', borderRadius: '10px',
-                border: `1px solid ${item.color ?? (item.ok === true ? '#10b981' : item.ok === false ? '#ef4444' : '#f59e0b')}`,
-              }}>
-                <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px' }}>{item.label}</div>
-                <div style={{
-                  fontSize: '16px', fontWeight: 'bold',
-                  color: item.color ?? (item.ok === true ? '#10b981' : item.ok === false ? '#ef4444' : '#f59e0b'),
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '16px' }}>
+              {[
+                { label: '外資短線態度', value: stockHealth.foreign_status, ok: stockHealth.foreign_bullish },
+                { label: '股價 vs MA20', value: stockHealth.price_status, ok: stockHealth.above_ma20 },
+                {
+                  label: `綜合結論（${stockHealth.stock_id}）`,
+                  value: stockHealth.conclusion,
+                  detail: stockHealth.conclusion_detail,
+                  color: signalColor[stockHealth.signal],
+                },
+              ].map((item, i) => (
+                <div key={i} style={{
+                  backgroundColor: '#0f172a', padding: '16px', borderRadius: '10px',
+                  border: `1px solid ${item.color ?? (item.ok === true ? '#10b981' : item.ok === false ? '#ef4444' : '#f59e0b')}`,
                 }}>
-                  {item.value}
+                  <div style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px' }}>{item.label}</div>
+                  <div style={{
+                    fontSize: '16px', fontWeight: 'bold',
+                    color: item.color ?? (item.ok === true ? '#10b981' : item.ok === false ? '#ef4444' : '#f59e0b'),
+                  }}>
+                    {item.value}
+                  </div>
+                  {item.detail && <div style={{ color: '#64748b', fontSize: '13px', marginTop: '6px' }}>{item.detail}</div>}
                 </div>
-                {item.detail && <div style={{ color: '#64748b', fontSize: '13px', marginTop: '6px' }}>{item.detail}</div>}
+              ))}
+            </div>
+
+            {/* 加入自選股按鈕 */}
+            {supabase && user && (
+              <div style={{ marginTop: '12px' }}>
+                {watchlist.includes(stockHealth.stock_id) ? (
+                  <span style={{ color: '#10b981', fontSize: '14px' }}>✓ 已加入自選股</span>
+                ) : (
+                  <button onClick={() => addToWatchlist(stockHealth.stock_id)} style={{
+                    padding: '6px 18px', fontSize: '14px', cursor: 'pointer',
+                    backgroundColor: 'transparent', color: '#38bdf8',
+                    border: '1px solid #38bdf8', borderRadius: '8px',
+                  }}>＋ 加入自選股</button>
+                )}
               </div>
-            ))}
-          </div>
+            )}
+            {supabase && !user && (
+              <p style={{ color: '#475569', fontSize: '13px', marginTop: '8px' }}>
+                <button onClick={() => setShowAuth(true)} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: '13px', padding: 0 }}>登入</button>
+                {' '}後可加入自選股，下次自動帶入
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -253,6 +375,7 @@ function App() {
       </div>
 
       {showBacktest && <BacktestModal onClose={() => setShowBacktest(false)} />}
+      {showAuth    && <AuthModal onClose={() => setShowAuth(false)} />}
 
       {/* Task-011：資金控管計算機 */}
       <PositionCalculator />
