@@ -8,17 +8,20 @@ import './App.css';
 function App() {
   const [macroData, setMacroData] = useState([]);
   const [chipData, setChipData] = useState([]);
+  const [sentimentData, setSentimentData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [macroRes, chipRes] = await Promise.all([
+        const [macroRes, chipRes, sentimentRes] = await Promise.all([
           axios.get('http://127.0.0.1:8000/api/v1/macro/signal'),
-          axios.get('http://127.0.0.1:8000/api/v1/chip/institutional')
+          axios.get('http://127.0.0.1:8000/api/v1/chip/institutional'),
+          axios.get('http://127.0.0.1:8000/api/v1/sentiment/ptt').catch(() => null),
         ]);
         setMacroData(macroRes.data.data.slice(0, 36).reverse());
         setChipData(chipRes.data.data);
+        if (sentimentRes) setSentimentData(sentimentRes.data);
       } catch (error) {
         console.error("資料載入失敗", error);
       } finally {
@@ -27,6 +30,12 @@ function App() {
     };
     fetchData();
   }, []);
+
+  const getSentimentColor = (score) => {
+    if (score >= 60) return '#ef4444';
+    if (score <= 40) return '#10b981';
+    return '#f59e0b';
+  };
 
   if (loading) return <div style={{ color: 'white', padding: '50px', fontSize: '24px' }}>載入戰情數據中...</div>;
 
@@ -37,6 +46,35 @@ function App() {
         <p style={{ margin: '10px 0 0 0', color: '#94a3b8' }}>台股宏觀與籌碼透視系統</p>
       </header>
 
+      {/* AI 散戶情緒指標卡片 */}
+      {sentimentData && (
+        <div style={{
+          backgroundColor: '#1e293b', padding: '25px', borderRadius: '12px',
+          border: '1px solid #334155', marginBottom: '30px',
+          display: 'flex', alignItems: 'center', gap: '40px'
+        }}>
+          <div style={{ textAlign: 'center', minWidth: '150px' }}>
+            <div style={{ fontSize: '16px', color: '#94a3b8', marginBottom: '10px' }}>今日 PTT 散戶情緒</div>
+            <div style={{ fontSize: '64px', fontWeight: 'bold', color: getSentimentColor(sentimentData.fear_greed_score), lineHeight: '1' }}>
+              {sentimentData.fear_greed_score}
+            </div>
+            <div style={{ fontSize: '22px', color: getSentimentColor(sentimentData.fear_greed_score), marginTop: '8px' }}>
+              {sentimentData.sentiment_label}
+            </div>
+          </div>
+          <div style={{ flex: 1, borderLeft: '1px solid #334155', paddingLeft: '40px' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#e2e8f0' }}>🤖 AI 盤後摘要分析</h3>
+            <p style={{ margin: 0, color: '#cbd5e1', fontSize: '18px', lineHeight: '1.6' }}>
+              {sentimentData.summary}
+            </p>
+            <p style={{ margin: '12px 0 0 0', color: '#64748b', fontSize: '13px' }}>
+              本日分析文章數：{sentimentData.article_count} 篇
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 雙欄圖表 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '30px' }}>
 
         <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px solid #334155' }}>
