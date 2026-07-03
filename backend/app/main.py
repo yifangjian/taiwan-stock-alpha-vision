@@ -1,15 +1,16 @@
 import os
 import sys
+from datetime import datetime
+from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-# data-pipeline 資料夾名稱含連字號，無法直接 import
-# 改成把 scrapers 目錄本身加入 Python 路徑
 _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(_project_root, "data-pipeline", "scrapers"))
 
 from ndc_macro_scraper import fetch_ndc_business_cycle_indicators
+from twse_institutional_scraper import fetch_twse_institutional
 
 app = FastAPI(
     title="AlphaVision Taiwan API",
@@ -40,6 +41,32 @@ def get_macro_signal():
     return {
         "status": "success",
         "total_records": len(df),
+        "data": df.to_dict(orient="records"),
+    }
+
+
+@app.get("/api/v1/chip/institutional")
+def get_institutional_chip(
+    date: Optional[str] = Query(
+        None,
+        description="查詢日期，格式為 YYYYMMDD。例如：20260703。若未填寫則預設為今日。",
+        pattern=r"^\d{8}$",
+    )
+):
+    """獲取台灣證交所三大法人買賣超日報"""
+    query_date = date if date else datetime.now().strftime("%Y%m%d")
+
+    df = fetch_twse_institutional(query_date)
+
+    if df is None or df.empty:
+        raise HTTPException(
+            status_code=404,
+            detail=f"無法取得 {query_date} 的三大法人資料，該日可能為非交易日（假日）。",
+        )
+
+    return {
+        "status": "success",
+        "query_date": query_date,
         "data": df.to_dict(orient="records"),
     }
 
