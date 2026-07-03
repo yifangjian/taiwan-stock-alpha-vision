@@ -1,0 +1,17 @@
+# 虛擬環境與套件快取
+venv/
+__pycache__/
+*.pyc
+
+# 環境變數（含 API 金鑰等機密）
+.env
+
+# 前端依賴
+node_modules/
+
+# macOS 系統暫存檔
+.DS_Store
+
+# IDE 設定
+.vscode/
+.idea/
