@@ -15,6 +15,7 @@ load_dotenv(os.path.join(_project_root, ".env"))
 from ndc_macro_scraper import fetch_ndc_business_cycle_indicators
 from twse_institutional_scraper import fetch_twse_institutional
 from sentiment_analyzer import analyze_ptt_sentiment
+from stock_health_scraper import get_stock_health
 
 app = FastAPI(
     title="AlphaVision Taiwan API",
@@ -59,15 +60,12 @@ def get_institutional_chip(
 ):
     """獲取台灣證交所三大法人買賣超日報"""
     query_date = date if date else datetime.now().strftime("%Y%m%d")
-
     df = fetch_twse_institutional(query_date)
-
     if df is None or df.empty:
         raise HTTPException(
             status_code=404,
             detail=f"無法取得 {query_date} 的三大法人資料，該日可能為非交易日（假日）。",
         )
-
     return {
         "status": "success",
         "query_date": query_date,
@@ -77,10 +75,42 @@ def get_institutional_chip(
 
 @app.get("/api/v1/sentiment/ptt")
 def get_ptt_sentiment():
-    """呼叫 PTT 股板爬蟲 + OpenAI，回傳今日散戶恐慌/貪婪指數"""
-    result = analyze_ptt_sentiment()
+    """PTT 股板爬蟲 + OpenAI 情緒分析，附白話操作建議 eli5_advice"""
+    # 取得景氣與法人資料作為 AI 的額外上下文
+    macro_score, macro_label, chip_net_billion = None, None, None
+    try:
+        macro_df = fetch_ndc_business_cycle_indicators()
+        if macro_df is not None and not macro_df.empty:
+            macro_score = int(macro_df.iloc[0]["Signal_Score"])
+            macro_label = macro_df.iloc[0]["Signal_Color"]
+    except Exception:
+        pass
+
+    try:
+        chip_df = fetch_twse_institutional(datetime.now().strftime("%Y%m%d"))
+        if chip_df is not None and not chip_df.empty:
+            total = chip_df[chip_df["單位名稱"] == "合計"]
+            if not total.empty:
+                chip_net_billion = round(float(total.iloc[0]["買賣差額"]) / 1e8, 1)
+    except Exception:
+        pass
+
+    result = analyze_ptt_sentiment(
+        macro_score=macro_score,
+        macro_label=macro_label,
+        chip_net_billion=chip_net_billion,
+    )
     if result is None:
         raise HTTPException(status_code=500, detail="PTT 情緒分析失敗")
+    return {"status": "success", **result}
+
+
+@app.get("/api/v1/chip/stock/{stock_id}")
+def get_stock_health_check(stock_id: str):
+    """個股健康檢查：外資動向 + 均線位置 + 綜合結論"""
+    if not stock_id.isdigit() or len(stock_id) not in (4, 5, 6):
+        raise HTTPException(status_code=400, detail="股票代號格式錯誤，請輸入 4~6 位數字")
+    result = get_stock_health(stock_id)
     return {"status": "success", **result}
 
 
