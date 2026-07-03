@@ -9,8 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.join(_project_root, "data-pipeline", "scrapers"))
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(_project_root, ".env"))
+
 from ndc_macro_scraper import fetch_ndc_business_cycle_indicators
 from twse_institutional_scraper import fetch_twse_institutional
+from sentiment_analyzer import analyze_ptt_sentiment
 
 app = FastAPI(
     title="AlphaVision Taiwan API",
@@ -69,6 +73,15 @@ def get_institutional_chip(
         "query_date": query_date,
         "data": df.to_dict(orient="records"),
     }
+
+
+@app.get("/api/v1/sentiment/ptt")
+def get_ptt_sentiment():
+    """呼叫 PTT 股板爬蟲 + OpenAI，回傳今日散戶恐慌/貪婪指數"""
+    result = analyze_ptt_sentiment()
+    if result is None:
+        raise HTTPException(status_code=500, detail="PTT 情緒分析失敗")
+    return {"status": "success", **result}
 
 
 if __name__ == "__main__":
