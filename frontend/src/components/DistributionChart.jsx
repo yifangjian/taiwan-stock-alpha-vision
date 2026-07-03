@@ -22,7 +22,7 @@ export default function DistributionChart({ data, stockId }) {
   return (
     <div style={{ marginTop: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-        <h3 style={{ margin: 0, color: '#e2e8f0' }}>
+        <h3 style={{ margin: 0, color: '#f0ead6' }}>
           📊 {stockId} 籌碼 X 光機（集保股權分散）
         </h3>
         {golden && (
@@ -45,11 +45,11 @@ export default function DistributionChart({ data, stockId }) {
       <div style={{ height: '240px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={formatted}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-            <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-            <YAxis stroke="#94a3b8" domain={['auto', 'auto']} tickFormatter={v => `${v}%`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2a2618" />
+            <XAxis dataKey="date" stroke="#9a8a68" tick={{ fontSize: 12 }} />
+            <YAxis stroke="#9a8a68" domain={['auto', 'auto']} tickFormatter={v => `${v}%`} />
             <Tooltip
-              contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #38bdf8' }}
+              contentStyle={{ backgroundColor: '#0c0b07', border: '1px solid #c8a84b' }}
               formatter={(v) => [`${v}%`]}
             />
             <Legend />

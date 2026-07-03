@@ -8,16 +8,16 @@ const overlay = {
   zIndex: 2000,
 }
 const modal = {
-  backgroundColor: '#1e293b',
-  border: '1px solid #334155',
+  backgroundColor: '#14120c',
+  border: '1px solid #2a2618',
   borderRadius: '16px',
   padding: '32px',
   width: '90%', maxWidth: '420px',
 }
 const inputStyle = {
   width: '100%', padding: '10px 14px', fontSize: '15px',
-  backgroundColor: '#0f172a', color: '#f8fafc',
-  border: '1px solid #475569', borderRadius: '8px',
+  backgroundColor: '#0c0b07', color: '#f8fafc',
+  border: '1px solid #3a3020', borderRadius: '8px',
   boxSizing: 'border-box', marginTop: '4px',
 }
 
@@ -51,8 +51,8 @@ export default function AuthModal({ onClose }) {
 
   const tabStyle = (active) => ({
     flex: 1, padding: '8px', cursor: 'pointer',
-    backgroundColor: active ? '#334155' : 'transparent',
-    color: active ? '#38bdf8' : '#64748b',
+    backgroundColor: active ? '#2a2618' : 'transparent',
+    color: active ? '#c8a84b' : '#64748b',
     border: 'none', borderRadius: '6px', fontSize: '15px', fontWeight: 'bold',
   })
 
@@ -60,26 +60,26 @@ export default function AuthModal({ onClose }) {
     <div style={overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={modal}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ margin: 0, color: '#38bdf8' }}>👤 會員系統</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+          <h2 style={{ margin: 0, color: '#c8a84b' }}>👤 會員系統</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9a8a68', fontSize: '22px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Tab switcher */}
-        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0f172a', borderRadius: '8px', padding: '4px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0c0b07', borderRadius: '8px', padding: '4px', marginBottom: '24px' }}>
           <button style={tabStyle(mode === 'login')}  onClick={() => { setMode('login');    setError(''); setMessage('') }}>登入</button>
           <button style={tabStyle(mode === 'register')} onClick={() => { setMode('register'); setError(''); setMessage('') }}>註冊</button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ color: '#94a3b8', fontSize: '13px' }}>Email</label>
+            <label style={{ color: '#9a8a68', fontSize: '13px' }}>Email</label>
             <input style={inputStyle} type="email" value={email}
               placeholder="you@example.com"
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
           </div>
           <div>
-            <label style={{ color: '#94a3b8', fontSize: '13px' }}>密碼</label>
+            <label style={{ color: '#9a8a68', fontSize: '13px' }}>密碼</label>
             <input style={inputStyle} type="password" value={password}
               placeholder="至少 6 個字元"
               onChange={e => setPassword(e.target.value)}
@@ -93,7 +93,7 @@ export default function AuthModal({ onClose }) {
         <button onClick={handleSubmit} disabled={loading} style={{
           width: '100%', marginTop: '20px', padding: '12px',
           fontSize: '16px', fontWeight: 'bold', cursor: 'pointer',
-          backgroundColor: '#38bdf8', color: '#0f172a',
+          backgroundColor: '#c8a84b', color: '#0c0b07',
           border: 'none', borderRadius: '10px',
         }}>
           {loading ? '處理中...' : mode === 'login' ? '🔑 登入' : '📝 建立帳號'}
