@@ -16,6 +16,8 @@ from ndc_macro_scraper import fetch_ndc_business_cycle_indicators
 from twse_institutional_scraper import fetch_twse_institutional
 from sentiment_analyzer import analyze_ptt_sentiment
 from stock_health_scraper import get_stock_health
+from tdcc_scraper import fetch_tdcc_distribution
+from backtest_engine import run_backtest
 
 app = FastAPI(
     title="AlphaVision Taiwan API",
@@ -111,6 +113,30 @@ def get_stock_health_check(stock_id: str):
     if not stock_id.isdigit() or len(stock_id) not in (4, 5, 6):
         raise HTTPException(status_code=400, detail="股票代號格式錯誤，請輸入 4~6 位數字")
     result = get_stock_health(stock_id)
+    return {"status": "success", **result}
+
+
+@app.get("/api/v1/chip/distribution/{stock_id}")
+def get_stock_distribution(stock_id: str):
+    """集保股權分散：大戶(千張+)與散戶(10張以下)持股比例，累積快取模式"""
+    if not stock_id.isdigit() or len(stock_id) not in (4, 5, 6):
+        raise HTTPException(status_code=400, detail="股票代號格式錯誤")
+    data = fetch_tdcc_distribution(stock_id)
+    return {"status": "success", "stock_id": stock_id, "data": data}
+
+
+@app.post("/api/v1/backtest")
+def backtest(
+    entry_score: int = Query(16, description="進場閾值（燈號分數 <= 此值買入）"),
+    exit_score:  int = Query(38, description="出場閾值（燈號分數 >= 此值賣出）"),
+    capital:     float = Query(1_000_000, description="初始資金（元）"),
+):
+    """景氣燈號 × 0050 無程式碼策略回測"""
+    if entry_score >= exit_score:
+        raise HTTPException(status_code=400, detail="進場閾值必須小於出場閾值")
+    result = run_backtest(entry_score=entry_score, exit_score=exit_score, capital=capital)
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
     return {"status": "success", **result}
 
 

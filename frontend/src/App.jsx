@@ -5,6 +5,8 @@ import {
   Tooltip, Legend, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import PositionCalculator from './components/PositionCalculator';
+import DistributionChart from './components/DistributionChart';
+import BacktestModal from './components/BacktestModal';
 import './App.css';
 
 const API = 'http://127.0.0.1:8000';
@@ -20,6 +22,10 @@ function App() {
   const [stockHealth, setStockHealth] = useState(null);
   const [stockLoading, setStockLoading] = useState(false);
   const [stockError, setStockError] = useState('');
+  const [distribution, setDistribution] = useState(null);
+
+  // 回測 Modal
+  const [showBacktest, setShowBacktest] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,12 +55,18 @@ function App() {
 
   const handleStockSearch = async () => {
     if (!stockInput.trim()) return;
+    const id = stockInput.trim();
     setStockLoading(true);
     setStockHealth(null);
+    setDistribution(null);
     setStockError('');
     try {
-      const res = await axios.get(`${API}/api/v1/chip/stock/${stockInput.trim()}`);
-      setStockHealth(res.data);
+      const [healthRes, distRes] = await Promise.all([
+        axios.get(`${API}/api/v1/chip/stock/${id}`),
+        axios.get(`${API}/api/v1/chip/distribution/${id}`).catch(() => null),
+      ]);
+      setStockHealth(healthRes.data);
+      if (distRes) setDistribution(distRes.data);
     } catch (err) {
       setStockError(err.response?.data?.detail || '查詢失敗，請確認股票代號');
     } finally {
@@ -187,6 +199,8 @@ function App() {
 
         {stockError && <p style={{ color: '#ef4444' }}>{stockError}</p>}
 
+        {distribution && <DistributionChart data={distribution.data} stockId={distribution.stock_id} />}
+
         {stockHealth && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
             {[
@@ -216,6 +230,29 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Task-015 入口：回測沙盒 */}
+      <div style={{
+        backgroundColor: '#1e293b', padding: '24px', borderRadius: '12px',
+        border: '1px solid #334155', marginBottom: '24px', textAlign: 'center',
+      }}>
+        <h2 style={{ margin: '0 0 8px', color: '#e2e8f0' }}>⏳ 無程式碼策略回測沙盒</h2>
+        <p style={{ color: '#94a3b8', margin: '0 0 16px' }}>
+          用景氣燈號歷史數據驗證「藍燈買、紅燈賣」的真實績效
+        </p>
+        <button
+          onClick={() => setShowBacktest(true)}
+          style={{
+            padding: '12px 32px', fontSize: '16px', fontWeight: 'bold',
+            backgroundColor: '#7c3aed', color: 'white',
+            border: 'none', borderRadius: '10px', cursor: 'pointer',
+          }}
+        >
+          🚀 啟動時光機
+        </button>
+      </div>
+
+      {showBacktest && <BacktestModal onClose={() => setShowBacktest(false)} />}
 
       {/* Task-011：資金控管計算機 */}
       <PositionCalculator />
