@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import axios from 'axios';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -18,19 +19,10 @@ const EXIT_OPTIONS = [
   { label: '綠燈 ≥ 23（中性）',   value: 23 },
 ];
 
-const overlay = {
-  position: 'fixed', inset: 0,
-  backgroundColor: 'rgba(0,0,0,0.85)',
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  zIndex: 1000,
-};
-const modal = {
-  backgroundColor: '#14120c',
-  border: '1px solid #2a2618',
-  borderRadius: '0px',
-  padding: '36px',
-  width: '90%', maxWidth: '880px',
-  maxHeight: '90vh', overflowY: 'auto',
+const selectStyle = {
+  background: '#F9F6F0', color: '#3E3A39',
+  border: '1px solid #EDE9E2', padding: '10px 12px',
+  fontSize: '14px', width: '100%', outline: 'none',
 };
 
 export default function BacktestModal({ onClose }) {
@@ -44,114 +36,110 @@ export default function BacktestModal({ onClose }) {
   const run = async () => {
     setLoading(true); setError(''); setResult(null);
     try {
-      const res = await axios.post(
-        `${API}/api/v1/backtest?entry_score=${entryScore}&exit_score=${exitScore}&capital=${capital}`
-      );
+      const res = await axios.post(`${API}/api/v1/backtest?entry_score=${entryScore}&exit_score=${exitScore}&capital=${capital}`);
       setResult(res.data);
-    } catch (e) {
-      setError(e.response?.data?.detail || '回測失敗');
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { setError(e.response?.data?.detail || '回測失敗'); }
+    finally { setLoading(false); }
   };
 
-  const selectStyle = {
-    backgroundColor: '#0c0b07', color: '#f8fafc',
-    border: '1px solid #3a3020', borderRadius: '8px',
-    padding: '10px 12px', fontSize: '15px', width: '100%',
-  };
+  const tipStyle = { backgroundColor: '#fff', border: '1px solid #EDE9E2', color: '#3E3A39', fontSize: 13 };
 
   return (
-    <div style={overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div style={modal}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h2 style={{ margin: 0, color: '#c8a84b' }}>⏳ 景氣燈號策略回測沙盒</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9a8a68', fontSize: '24px', cursor: 'pointer' }}>✕</button>
+    <div style={{
+      position: 'fixed', inset: 0, backgroundColor: 'rgba(62,58,57,0.55)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <motion.div
+        initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          background: '#FFFFFF', border: '1px solid #EDE9E2',
+          padding: '40px', width: '90%', maxWidth: '860px',
+          maxHeight: '90vh', overflowY: 'auto',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.10)',
+        }}>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+          <h2 style={{ fontFamily:"'Noto Serif TC', serif", fontSize: '20px', fontWeight: 400, color: '#3E3A39' }}>
+            景氣燈號策略回測沙盒
+          </h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#B5ADA4', fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
           <div>
-            <label style={{ color: '#9a8a68', fontSize: '14px', display: 'block', marginBottom: '6px' }}>📉 進場條件（燈號低於…）</label>
+            <label style={{ color: '#B5ADA4', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'monospace', display: 'block', marginBottom: '6px' }}>📉 進場條件</label>
             <select style={selectStyle} value={entryScore} onChange={e => setEntryScore(+e.target.value)}>
               {ENTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ color: '#9a8a68', fontSize: '14px', display: 'block', marginBottom: '6px' }}>📈 出場條件（燈號高於…）</label>
+            <label style={{ color: '#B5ADA4', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'monospace', display: 'block', marginBottom: '6px' }}>📈 出場條件</label>
             <select style={selectStyle} value={exitScore} onChange={e => setExitScore(+e.target.value)}>
               {EXIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ color: '#9a8a68', fontSize: '14px', display: 'block', marginBottom: '6px' }}>💰 投資本金（元）</label>
-            <input
-              style={{ ...selectStyle }}
-              type="number" value={capital}
-              onChange={e => setCapital(e.target.value)}
-            />
+            <label style={{ color: '#B5ADA4', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'monospace', display: 'block', marginBottom: '6px' }}>💰 投資本金（元）</label>
+            <input style={selectStyle} type="number" value={capital} onChange={e => setCapital(e.target.value)} />
           </div>
         </div>
 
-        <button onClick={run} disabled={loading} style={{
-          width: '100%', padding: '14px', fontSize: '17px', fontWeight: 'bold',
-          backgroundColor: '#c8a84b', color: '#0c0b07',
-          border: 'none', borderRadius: '10px', cursor: 'pointer', marginBottom: '24px',
-        }}>
-          {loading ? '時光機啟動中...' : '🚀 開始回測'}
-        </button>
+        <motion.button onClick={run} disabled={loading}
+          style={{
+            width: '100%', padding: '14px', background: '#B85C38', color: '#fff',
+            border: 'none', fontFamily:"'Noto Serif TC', serif", fontSize: '15px',
+            letterSpacing: '2px', cursor: 'pointer', marginBottom: '28px',
+          }}
+          whileHover={{ backgroundColor: '#9E4E2F', y: -1, transition: { duration: 0.4 } }}>
+          {loading ? '時光機啟動中…' : '開始回測'}
+        </motion.button>
 
-        {error && <p style={{ color: '#ef4444' }}>{error}</p>}
+        {error && <p style={{ color: '#B85C38', marginBottom: '16px', fontSize: '14px' }}>{error}</p>}
 
         {result && (
           <>
-            {/* KPI 卡片 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px', marginBottom: '24px' }}>
               {[
-                { label: '歷史勝率', value: `${result.win_rate_pct}%`,    color: '#10b981' },
-                { label: '總報酬率', value: `${result.total_return_pct}%`, color: result.total_return_pct >= 0 ? '#c8a84b' : '#ef4444' },
-                { label: '最大回撤 MDD', value: `${result.mdd_pct}%`,    color: '#f59e0b' },
+                { label: '歷史勝率', value: `${result.win_rate_pct}%`,     color: '#4A9B6F' },
+                { label: '總報酬率', value: `${result.total_return_pct}%`, color: result.total_return_pct >= 0 ? '#A3907C' : '#B85C38' },
+                { label: '最大回撤', value: `${result.mdd_pct}%`,          color: '#B85C38' },
               ].map(kpi => (
-                <div key={kpi.label} style={{
-                  backgroundColor: '#0c0b07', padding: '16px', borderRadius: '10px',
-                  border: '1px solid #2a2618', textAlign: 'center',
-                }}>
-                  <div style={{ color: '#9a8a68', fontSize: '13px', marginBottom: '8px' }}>{kpi.label}</div>
-                  <div style={{ fontSize: '32px', fontWeight: 'bold', color: kpi.color }}>{kpi.value}</div>
-                </div>
+                <motion.div key={kpi.label}
+                  style={{ background: '#F9F6F0', border: '1px solid #EDE9E2', padding: '20px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
+                  whileHover={{ y: -2, boxShadow: '0 8px 28px rgba(0,0,0,0.07)', transition: { duration: 0.4 } }}>
+                  <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#B5ADA4', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '10px' }}>{kpi.label}</div>
+                  <div style={{ fontFamily:"'Noto Serif TC', serif", fontSize: '32px', fontWeight: 600, color: kpi.color }}>{kpi.value}</div>
+                </motion.div>
               ))}
             </div>
 
-            <div style={{ color: '#64748b', fontSize: '13px', marginBottom: '16px' }}>
-              策略共在市 {result.months_in_market} 個月｜
-              初始資金 NT${Number(result.initial_capital).toLocaleString()} →
-              最終 NT${Number(result.final_capital).toLocaleString()}
+            <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#B5ADA4', marginBottom: '16px', letterSpacing: '1px' }}>
+              在市 {result.months_in_market} 個月 &nbsp;·&nbsp;
+              NT${Number(result.initial_capital).toLocaleString()} → NT${Number(result.final_capital).toLocaleString()}
             </div>
 
-            {/* 資產成長曲線 */}
-            <h3 style={{ color: '#e2e8f0', marginTop: 0 }}>資產成長曲線（最近 60 個月）</h3>
-            <div style={{ height: '260px' }}>
+            <div style={{ fontFamily:"'Noto Serif TC', serif", fontSize: '14px', color: '#857870', marginBottom: '12px' }}>資產成長曲線（最近 60 個月）</div>
+            <div style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={result.equity_curve}>
                   <defs>
-                    <linearGradient id="eq" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#c8a84b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#c8a84b" stopOpacity={0} />
+                    <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#A3907C" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#A3907C" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2618" />
-                  <XAxis dataKey="date" stroke="#9a8a68" tick={{ fontSize: 11 }} />
-                  <YAxis stroke="#9a8a68" tickFormatter={v => `${(v / 10000).toFixed(0)}萬`} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#0c0b07', border: '1px solid #c8a84b' }}
-                    formatter={v => [`NT$${Number(v).toLocaleString()}`]}
-                  />
-                  <Area type="monotone" dataKey="equity" stroke="#c8a84b" fill="url(#eq)" strokeWidth={2} dot={false} />
+                  <CartesianGrid stroke="transparent" />
+                  <XAxis dataKey="date" stroke="#CFC9BF" axisLine={{ stroke: '#EDE9E2' }} tickLine={false} tick={{ fill: '#B5ADA4', fontSize: 11 }} />
+                  <YAxis stroke="#CFC9BF" axisLine={{ stroke: '#EDE9E2' }} tickLine={false} tick={{ fill: '#B5ADA4', fontSize: 11 }} tickFormatter={v => `${(v/10000).toFixed(0)}萬`} />
+                  <Tooltip contentStyle={tipStyle} formatter={v => [`NT$${Number(v).toLocaleString()}`]} />
+                  <Area type="monotone" dataKey="equity" stroke="#A3907C" fill="url(#eqGrad)" strokeWidth={2} dot={false} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
