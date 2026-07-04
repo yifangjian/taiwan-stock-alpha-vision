@@ -151,6 +151,94 @@ def _parse_twse_msg(msg: Dict, exchange: str) -> Dict:
     }
 
 
+# FinMind name → internal key mapping (aggregate rows only, skip sub-categories)
+_INST_NAME_MAP = {
+    "Foreign_Investor":  "foreign",
+    "外資及陸資":          "foreign",
+    "外資":               "foreign",
+    "Investment_Trust":  "trust",
+    "投信":               "trust",
+    "Dealer":            "dealer",
+    "自營商":             "dealer",
+}
+
+
+def get_institutional(stock_id: str) -> Dict:
+    """
+    三大法人買賣超（近 60 個交易日）+ 週轉率（yfinance 計算）。
+    買賣超單位：千股（張）
+    """
+    start = (datetime.now() - timedelta(days=120)).strftime("%Y-%m-%d")
+    raw   = _fm_get("TaiwanStockInstitutionalInvestorsBuySell", stock_id, start)
+
+    by_date: Dict[str, Dict] = {}
+    for r in raw:
+        name = r.get("name", "")
+        key  = _INST_NAME_MAP.get(name)
+        if not key:
+            continue
+        d    = r.get("date", "")[:10]
+        diff = int(r.get("diff", 0) or 0)
+        if d not in by_date:
+            by_date[d] = {"date": d, "foreign": 0, "trust": 0, "dealer": 0}
+        by_date[d][key] += diff
+
+    institutional = sorted(by_date.values(), key=lambda x: x["date"])[-60:]
+
+    # Cumulative sums
+    cum = {"foreign": 0, "trust": 0, "dealer": 0}
+    for row in institutional:
+        for k in cum:
+            cum[k] += row[k]
+            row[f"{k}_cum"] = cum[k]
+
+    # Turnover rate from yfinance
+    turnover: List[Dict] = []
+    try:
+        import yfinance as yf
+        t      = yf.Ticker(f"{stock_id}.TW")
+        hist   = t.history(period="3mo")
+        info   = t.info
+        shares = (info.get("sharesOutstanding") or
+                  info.get("impliedSharesOutstanding") or 0)
+        if shares and not hist.empty:
+            for idx, row in hist.iterrows():
+                if row["Volume"] > 0:
+                    rate = round(row["Volume"] / shares * 100, 4)
+                    turnover.append({"date": idx.strftime("%Y-%m-%d"), "rate": rate})
+    except Exception:
+        pass
+
+    return {
+        "stock_id":      stock_id,
+        "institutional": institutional,
+        "turnover":      turnover[-60:],
+    }
+
+
+def get_margin_history(stock_id: str) -> Dict:
+    """融資融券歷史（近 60 個交易日）。單位：張（千股）。"""
+    start = (datetime.now() - timedelta(days=120)).strftime("%Y-%m-%d")
+    raw   = _fm_get("TaiwanStockMarginPurchaseShortSale", stock_id, start)
+
+    history = []
+    for r in raw:
+        history.append({
+            "date":           r.get("date", "")[:10],
+            "margin_balance": int(r.get("MarginPurchaseBalance", 0) or 0),
+            "margin_buy":     int(r.get("MarginPurchaseBuy",     0) or 0),
+            "margin_sell":    int(r.get("MarginPurchaseSell",    0) or 0),
+            "short_balance":  int(r.get("ShortSaleBalance",      0) or 0),
+            "short_buy":      int(r.get("ShortSaleBuy",          0) or 0),
+            "short_sell":     int(r.get("ShortSaleSell",         0) or 0),
+        })
+
+    return {
+        "stock_id": stock_id,
+        "history":  sorted(history, key=lambda x: x["date"])[-60:],
+    }
+
+
 def get_realtime_twse(stock_id: str) -> Dict:
     """TWSE MIS 即時報價（盤中每 ~5 秒更新）+ 委買委賣五檔。完全免費。"""
     url = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp"

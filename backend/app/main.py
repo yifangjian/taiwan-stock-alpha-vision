@@ -524,6 +524,24 @@ def get_stock_fundamentals(stock_id: str):
     return {"status": "success", **result}
 
 
+# ── 三大法人買賣超 + 週轉率（FinMind + yfinance）───────────────
+@app.get("/api/v1/stock/flow/{stock_id}")
+def get_institutional_flow(stock_id: str):
+    """外資 / 投信 / 自營商日買賣超（60天）+ 週轉率（60天）"""
+    from services.finmind_service import get_institutional
+    result = get_institutional(stock_id)
+    return {"status": "success", **result}
+
+
+# ── 融資融券歷史（FinMind）───────────────────────────────────
+@app.get("/api/v1/stock/margin-history/{stock_id}")
+def get_margin_history_data(stock_id: str):
+    """融資餘額 / 融券餘額 60天歷史走勢"""
+    from services.finmind_service import get_margin_history
+    result = get_margin_history(stock_id)
+    return {"status": "success", **result}
+
+
 # ── 回測 ─────────────────────────────────────────────────────
 @app.post("/api/v1/backtest")
 def backtest(

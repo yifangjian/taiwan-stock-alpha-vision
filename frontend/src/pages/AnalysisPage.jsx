@@ -7,6 +7,8 @@ import SmartMoneyChart          from '../components/SmartMoneyChart';
 import NewsFilter               from '../components/NewsFilter';
 import RealtimePrice            from '../components/RealtimePrice';
 import FundamentalsCard         from '../components/FundamentalsCard';
+import InstitutionalFlow        from '../components/InstitutionalFlow';
+import MarginHistoryChart       from '../components/MarginHistoryChart';
 import { supabase }             from '../lib/supabase';
 import { useResponsive }        from '../hooks/useResponsive';
 
@@ -84,9 +86,11 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
   const [distribution, setDistribution] = useState(null);
   const [smartMoney,   setSmartMoney]   = useState(null);
   const [marginData,   setMarginData]   = useState(null);
-  const [newsData,     setNewsData]     = useState(null);
-  const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState('');
+  const [newsData,        setNewsData]        = useState(null);
+  const [institutionalData, setInstitutionalData] = useState(null);
+  const [marginHistory,   setMarginHistory]   = useState(null);
+  const [loading,         setLoading]         = useState(false);
+  const [error,           setError]           = useState('');
 
   const search = async (id) => {
     const sid = (id || stockInput).trim();
@@ -95,20 +99,25 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
     setLoading(true);
     setStockHealth(null); setDistribution(null); setSmartMoney(null);
     setMarginData(null); setNewsData(null); setError('');
+    setInstitutionalData(null); setMarginHistory(null);
 
     try {
-      const [hR, dR, smR, mR, nR] = await Promise.all([
+      const [hR, dR, smR, mR, nR, instR, mhR] = await Promise.all([
         axios.get(`${API}/api/v1/chip/stock/${sid}`),
         axios.get(`${API}/api/v1/chip/distribution/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/chip/smart-money/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/chip/margin/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/news/filter/${sid}`).catch(() => null),
+        axios.get(`${API}/api/v1/stock/flow/${sid}`).catch(() => null),
+        axios.get(`${API}/api/v1/stock/margin-history/${sid}`).catch(() => null),
       ]);
       setStockHealth(hR.data);
-      if (dR)  setDistribution(dR.data);
-      if (smR) setSmartMoney(smR.data);
-      if (mR)  setMarginData(mR.data);
-      if (nR)  setNewsData(nR.data);
+      if (dR)   setDistribution(dR.data);
+      if (smR)  setSmartMoney(smR.data);
+      if (mR)   setMarginData(mR.data);
+      if (nR)   setNewsData(nR.data);
+      if (instR?.data?.status === 'success') setInstitutionalData(instR.data);
+      if (mhR?.data?.status === 'success')  setMarginHistory(mhR.data);
     } catch (e) {
       setError(e.response?.data?.detail || '查詢失敗，請確認股票代號');
     } finally { setLoading(false); }
@@ -356,19 +365,26 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
               <FundamentalsCard stockId={stockHealth.stock_id} />
             </motion.div>
 
-            {/* Smart money */}
-            {smartMoney && (
-              <motion.div variants={SECTION_VAR} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
-                <SmartMoneyChart data={smartMoney} />
+            {/* 三大法人買賣超 + 週轉率 */}
+            {institutionalData && (
+              <motion.div variants={SECTION_VAR} initial="hidden" animate="show">
+                <InstitutionalFlow stockId={stockHealth.stock_id} />
               </motion.div>
             )}
 
-            {/* Margin trading 融資券 */}
+            {/* 融資融券歷史走勢 */}
+            {marginHistory && (
+              <motion.div variants={SECTION_VAR} initial="hidden" animate="show">
+                <MarginHistoryChart stockId={stockHealth.stock_id} />
+              </motion.div>
+            )}
+
+            {/* Margin trading 最新快照（4格摘要，保留原有即時數值）*/}
             {marginData && !marginData.error && (
               <motion.div variants={SECTION_VAR} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
                 <div style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: '24px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
                   <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
-                    Margin Trading · 融資券籌碼
+                    當日融資券快照 · Latest Snapshot
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
                     {[
@@ -388,6 +404,13 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
                     資料來源：TWSE · {marginData.date?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}
                   </div>
                 </div>
+              </motion.div>
+            )}
+
+            {/* Smart money */}
+            {smartMoney && (
+              <motion.div variants={SECTION_VAR} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+                <SmartMoneyChart data={smartMoney} />
               </motion.div>
             )}
 
