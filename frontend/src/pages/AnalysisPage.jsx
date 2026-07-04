@@ -74,14 +74,6 @@ function SkeletonSection() {
 
 const signalBorder = { green: '#4A9B6F', red: '#B85C38', yellow: '#A3907C' };
 
-/* ── Candles fetcher (for ArtisanInteractiveChart) ── */
-async function fetchCandles(stockId, period = '3mo') {
-  try {
-    const { data } = await axios.get(`${API}/api/v1/chart/candles/${stockId}`, { params: { period } });
-    return data.candles ?? [];
-  } catch { return []; }
-}
-
 /* ════════════════════════════════════════════════════════════ */
 export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
   const { isMobile } = useResponsive();
@@ -91,7 +83,6 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
   const [smartMoney,   setSmartMoney]   = useState(null);
   const [marginData,   setMarginData]   = useState(null);
   const [newsData,     setNewsData]     = useState(null);
-  const [candles,      setCandles]      = useState([]);
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
 
@@ -101,23 +92,21 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
     setStockInput(sid);
     setLoading(true);
     setStockHealth(null); setDistribution(null); setSmartMoney(null);
-    setMarginData(null); setNewsData(null); setCandles([]); setError('');
+    setMarginData(null); setNewsData(null); setError('');
 
     try {
-      const [hR, dR, smR, mR, nR, cR] = await Promise.all([
+      const [hR, dR, smR, mR, nR] = await Promise.all([
         axios.get(`${API}/api/v1/chip/stock/${sid}`),
         axios.get(`${API}/api/v1/chip/distribution/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/chip/smart-money/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/chip/margin/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/news/filter/${sid}`).catch(() => null),
-        fetchCandles(sid),
       ]);
       setStockHealth(hR.data);
       if (dR)  setDistribution(dR.data);
       if (smR) setSmartMoney(smR.data);
       if (mR)  setMarginData(mR.data);
       if (nR)  setNewsData(nR.data);
-      setCandles(cR);
     } catch (e) {
       setError(e.response?.data?.detail || '查詢失敗，請確認股票代號');
     } finally { setLoading(false); }
@@ -347,12 +336,12 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
             {/* Interactive K-line chart */}
             <motion.div
               variants={SECTION_VAR} initial="hidden" animate="show"
-              style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: '24px 28px', marginBottom: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
+              style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: isMobile ? '16px' : '24px 28px', marginBottom: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
             >
-              <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
-                K 線 · 均線 · 成交量
+              <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 14 }}>
+                K 線 · 均線 · 技術指標
               </div>
-              <ArtisanInteractiveChart candles={candles.length ? candles : null} height={440} />
+              <ArtisanInteractiveChart stockId={stockHealth.stock_id} />
             </motion.div>
 
             {/* Smart money */}
