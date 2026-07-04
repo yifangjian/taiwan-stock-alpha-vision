@@ -254,13 +254,12 @@ def get_margin_history(stock_id: str) -> Dict:
     for r in raw:
         history.append({
             "date":           r.get("date", "")[:10],
-            # FinMind may use different capitalisation — try both variants
-            "margin_balance": _i(r, "MarginPurchaseBalance", "margin_purchase_balance"),
-            "margin_buy":     _i(r, "MarginPurchaseBuy",     "margin_purchase_buy"),
-            "margin_sell":    _i(r, "MarginPurchaseSell",    "margin_purchase_sell"),
-            "short_balance":  _i(r, "ShortSaleBalance",      "short_sale_balance"),
-            "short_buy":      _i(r, "ShortSaleBuy",          "short_sale_buy"),
-            "short_sell":     _i(r, "ShortSaleSell",         "short_sale_sell"),
+            "margin_balance": _i(r, "MarginPurchaseTodayBalance"),
+            "margin_buy":     _i(r, "MarginPurchaseBuy"),
+            "margin_sell":    _i(r, "MarginPurchaseSell"),
+            "short_balance":  _i(r, "ShortSaleTodayBalance"),
+            "short_buy":      _i(r, "ShortSaleBuy"),
+            "short_sell":     _i(r, "ShortSaleSell"),
         })
 
     return {
