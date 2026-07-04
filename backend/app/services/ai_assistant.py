@@ -5,6 +5,7 @@ Tools: screen_stocks | get_stock_detail | get_market_overview
 
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Optional, Dict, Tuple
 
 import yfinance as yf
 
@@ -125,7 +126,7 @@ TOOLS = [
 
 # ── Tool implementations ──────────────────────────────────────────────────────
 
-def _fetch_price_yield(stock_id: str) -> tuple[float | None, float | None]:
+def _fetch_price_yield(stock_id: str) -> Tuple[Optional[float], Optional[float]]:
     """Return (price, dividend_yield%) for a TW ticker. Returns (None, None) on error."""
     try:
         t    = yf.Ticker(f"{stock_id}.TW")
@@ -143,11 +144,11 @@ def _fetch_price_yield(stock_id: str) -> tuple[float | None, float | None]:
 
 def _screen_stocks(
     strategy:   str,
-    industries: list[str] | None = None,
-    max_price:  float | None = None,
-    min_yield:  float | None = None,
+    industries: Optional[List[str]] = None,
+    max_price:  Optional[float] = None,
+    min_yield:  Optional[float] = None,
     top_n:      int = 5,
-) -> dict:
+) -> Dict:
     candidates = STRATEGY_POOL.get(strategy, list(STOCK_DB.keys()))
 
     if industries:
@@ -192,7 +193,7 @@ def _screen_stocks(
     }
 
 
-def _get_stock_detail(stock_id: str) -> dict:
+def _get_stock_detail(stock_id: str) -> Dict:
     info  = STOCK_DB.get(stock_id, {})
     price, dy = _fetch_price_yield(stock_id)
     try:
@@ -214,7 +215,7 @@ def _get_stock_detail(stock_id: str) -> dict:
     }
 
 
-def _get_market_overview() -> dict:
+def _get_market_overview() -> Dict:
     try:
         idx = yf.Ticker("^TWII")
         hist = idx.history(period="5d")
@@ -232,7 +233,7 @@ def _get_market_overview() -> dict:
     return {"summary": "目前無法取得大盤指數，請查看戰情中心"}
 
 
-def _execute_tool(name: str, args: dict) -> dict:
+def _execute_tool(name: str, args: Dict) -> Dict:
     if name == "screen_stocks":
         return _screen_stocks(**args)
     if name == "get_stock_detail":
@@ -245,11 +246,11 @@ def _execute_tool(name: str, args: dict) -> dict:
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_assistant(
-    messages:  list[dict],
-    profile:   dict,
-    portfolio: list[str],
+    messages:  List[Dict],
+    profile:   Dict,
+    portfolio: List[str],
     openai_client,
-) -> dict:
+) -> Dict:
     """
     Run one turn of the assistant.
     messages: list of {role, content} from the frontend conversation history.
