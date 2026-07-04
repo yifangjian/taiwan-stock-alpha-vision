@@ -43,7 +43,7 @@ export default function HomePage({ user }) {
         minHeight: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         padding: '120px 52px 80px', textAlign: 'center',
-        background: 'linear-gradient(180deg, #F9F6F0 0%, #F2EDE6 100%)',
+        background: 'transparent',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ width: 1, height: 60, background: 'linear-gradient(to bottom, transparent, #CFC9BF)', marginBottom: 32 }} />
