@@ -38,9 +38,19 @@ def fetch_ndc_business_cycle_indicators(url: str = NDC_ZIP_URL) -> Optional[pd.D
 
         # 在記憶體中解開 ZIP，不需要寫入磁碟
         with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
+            def _fname(info) -> str:
+                # ZIP UTF-8 flag (bit 11): filename is already Unicode
+                if info.flag_bits & 0x800:
+                    return info.filename
+                # Legacy: cp437 → big5 (old Taiwan gov files)
+                try:
+                    return info.filename.encode("cp437").decode("big5")
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    return info.filename
+
             target = next(
                 info for info in zf.infolist()
-                if "景氣指標與燈號" in info.filename.encode("cp437").decode("big5")
+                if "景氣指標與燈號" in _fname(info)
                 and not info.filename.startswith("schema")
             )
             raw = zf.read(target.filename)
