@@ -151,16 +151,36 @@ def _parse_twse_msg(msg: Dict, exchange: str) -> Dict:
     }
 
 
-# FinMind name → internal key mapping (aggregate rows only, skip sub-categories)
-_INST_NAME_MAP = {
-    "Foreign_Investor":  "foreign",
-    "外資及陸資":          "foreign",
-    "外資":               "foreign",
-    "Investment_Trust":  "trust",
-    "投信":               "trust",
-    "Dealer":            "dealer",
-    "自營商":             "dealer",
-}
+# Sub-category names to SKIP (already rolled into the aggregate row)
+_INST_SKIP_SUBSTR = ("三大法人", "Foreign_Dealer_Self", "Dealer_self", "Dealer_Hedging",
+                     "外資自營商", "自營商(自行", "自營商(避險", "自營商自行", "自營商避險")
+
+
+def _inst_key(name: str) -> Optional[str]:
+    """Map a FinMind institution name to internal key, or None to skip."""
+    if not name:
+        return None
+    # Skip sub-categories and totals
+    for skip in _INST_SKIP_SUBSTR:
+        if skip in name:
+            return None
+    # Foreign investors (外資及陸資 / Foreign_Investor)
+    if "外資" in name or "Foreign" in name:
+        return "foreign"
+    # Investment trust
+    if "投信" in name or "Investment_Trust" in name:
+        return "trust"
+    # Dealers (自營商合計 / Dealer)
+    if "自營" in name or "Dealer" in name:
+        return "dealer"
+    return None
+
+
+def get_institutional_raw_names(stock_id: str) -> List[str]:
+    """Debug helper — return all unique name values from FinMind for this stock."""
+    start = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
+    raw   = _fm_get("TaiwanStockInstitutionalInvestorsBuySell", stock_id, start)
+    return sorted({r.get("name", "") for r in raw})
 
 
 def get_institutional(stock_id: str) -> Dict:
@@ -168,13 +188,18 @@ def get_institutional(stock_id: str) -> Dict:
     三大法人買賣超（近 60 個交易日）+ 週轉率（yfinance 計算）。
     買賣超單位：千股（張）
     """
+    if not FINMIND_TOKEN:
+        return {
+            "stock_id": stock_id, "institutional": [], "turnover": [],
+            "token_missing": True,
+        }
+
     start = (datetime.now() - timedelta(days=120)).strftime("%Y-%m-%d")
     raw   = _fm_get("TaiwanStockInstitutionalInvestorsBuySell", stock_id, start)
 
     by_date: Dict[str, Dict] = {}
     for r in raw:
-        name = r.get("name", "")
-        key  = _INST_NAME_MAP.get(name)
+        key  = _inst_key(r.get("name", ""))
         if not key:
             continue
         d    = r.get("date", "")[:10]

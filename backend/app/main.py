@@ -533,6 +533,14 @@ def get_institutional_flow(stock_id: str):
     return {"status": "success", **result}
 
 
+@app.get("/api/v1/debug/inst-names/{stock_id}")
+def debug_inst_names(stock_id: str):
+    """Debug: 查看 FinMind 回傳的三大法人 name 欄位原始值"""
+    from services.finmind_service import get_institutional_raw_names
+    names = get_institutional_raw_names(stock_id)
+    return {"stock_id": stock_id, "names": names, "count": len(names)}
+
+
 # ── 融資融券歷史（FinMind）───────────────────────────────────
 @app.get("/api/v1/stock/margin-history/{stock_id}")
 def get_margin_history_data(stock_id: str):

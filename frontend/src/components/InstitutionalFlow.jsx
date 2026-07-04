@@ -258,6 +258,16 @@ export default function InstitutionalFlow({ stockId }) {
 
   if (!data) return null;
 
+  if (data.token_missing) {
+    return (
+      <div style={{ background: '#FAFAF8', border: '1px solid #EDE9E2', padding: '24px', marginBottom: 24 }}>
+        <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#B85C38', letterSpacing: 1 }}>
+          ⚠ FINMIND_TOKEN 未設定 — 請至 Railway 後台 Variables 新增環境變數後重新部署
+        </div>
+      </div>
+    );
+  }
+
   const activeTab = TABS[tab];
 
   return (
