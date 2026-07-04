@@ -541,6 +541,20 @@ def debug_inst_names(stock_id: str):
     return {"stock_id": stock_id, "names": names, "count": len(names)}
 
 
+@app.get("/api/v1/debug/margin-fields/{stock_id}")
+def debug_margin_fields(stock_id: str):
+    """Debug: 查看 FinMind 融資融券資料的原始欄位名稱及樣本"""
+    from services.finmind_service import _fm_get
+    from datetime import datetime, timedelta
+    start = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
+    raw   = _fm_get("TaiwanStockMarginPurchaseShortSale", stock_id, start)
+    return {
+        "count":  len(raw),
+        "fields": list(raw[0].keys()) if raw else [],
+        "sample": raw[0] if raw else {},
+    }
+
+
 # ── 融資融券歷史（FinMind）───────────────────────────────────
 @app.get("/api/v1/stock/margin-history/{stock_id}")
 def get_margin_history_data(stock_id: str):
