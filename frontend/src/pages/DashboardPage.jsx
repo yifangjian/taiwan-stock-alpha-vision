@@ -62,17 +62,15 @@ export default function DashboardPage({ portfolio, profile }) {
 
   useEffect(() => {
     (async () => {
-      try {
-        const [mR, cR, sR] = await Promise.all([
-          axios.get(`${API}/api/v1/macro/signal`),
-          axios.get(`${API}/api/v1/chip/institutional`),
-          axios.get(`${API}/api/v1/sentiment/ptt`).catch(() => null),
-        ]);
-        setMacroData(mR.data.data.slice(0, 36).reverse());
-        setChipData(cR.data.data);
-        if (sR) setSentimentData(sR.data);
-      } catch {}
-      finally { setLoading(false); }
+      const [mR, cR, sR] = await Promise.all([
+        axios.get(`${API}/api/v1/macro/signal`).catch(() => null),
+        axios.get(`${API}/api/v1/chip/institutional`).catch(() => null),
+        axios.get(`${API}/api/v1/sentiment/ptt`).catch(() => null),
+      ]);
+      if (mR) setMacroData(mR.data.data.slice(0, 36).reverse());
+      if (cR) setChipData(cR.data.data);
+      if (sR) setSentimentData(sR.data);
+      setLoading(false);
     })();
   }, []);
 
