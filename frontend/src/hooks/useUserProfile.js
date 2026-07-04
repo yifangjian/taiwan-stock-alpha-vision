@@ -5,6 +5,7 @@ const DEFAULT_PROFILE = {
   risk_tolerance:  '穩健',
   industries:      [],
   knowledge_level: '新手',
+  line_user_id:    null,
 };
 
 export function useUserProfile(user) {
@@ -27,6 +28,7 @@ export function useUserProfile(user) {
             risk_tolerance:  data.risk_tolerance  || DEFAULT_PROFILE.risk_tolerance,
             industries:      data.industries      || [],
             knowledge_level: data.knowledge_level || DEFAULT_PROFILE.knowledge_level,
+            line_user_id:    data.line_user_id    || null,
           });
         }
         setLoading(false);

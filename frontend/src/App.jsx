@@ -166,7 +166,7 @@ export default function App() {
               <AssistantPage profile={profile} portfolio={watchlist} />
             } />
             <Route path="/portfolio" element={<PortfolioPage user={user} />} />
-            <Route path="/alerts"    element={<AlertsPage user={user} />} />
+            <Route path="/alerts"    element={<AlertsPage user={user} profile={profile} />} />
           </Routes>
         </motion.div>
       </AnimatePresence>
@@ -179,6 +179,7 @@ export default function App() {
             saving={saving}
             onSave={saveProfile}
             onClose={() => setShowProfile(false)}
+            user={user}
           />
         )}
       </AnimatePresence>

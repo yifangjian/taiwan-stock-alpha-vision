@@ -30,7 +30,7 @@ from stock_health_scraper    import get_stock_health
 from tdcc_scraper            import fetch_tdcc_distribution
 from backtest_engine         import run_backtest
 from news_scraper            import get_filtered_news
-from line_bot                import handle_webhook
+from line_bot                import handle_webhook, generate_binding_code, push_to_line_user
 from scheduler               import create_scheduler
 from services.smart_money    import get_smart_money_cost
 from services.ta_analysis    import compute_ta, get_candles as _get_candles
@@ -474,16 +474,37 @@ def get_margin(stock_id: str):
 
 # ── 條件型推播檢查 ────────────────────────────────────────────
 class AlertCheckRequest(BaseModel):
-    conditions: list[dict] = []
+    conditions:   list[dict] = []
+    line_user_id: Optional[str] = None
 
 @app.post("/api/v1/alerts/check")
 def alert_check(req: AlertCheckRequest):
-    """立即檢查條件清單，回傳已觸發項目；若有 LINE token 同時推播"""
+    """立即檢查條件清單，觸發時個人化推播給指定 LINE 用戶"""
     if not req.conditions:
         return {"status": "success", "triggered": []}
-    from line_bot import broadcast_text
-    triggered = run_alert_check(req.conditions, _openai, broadcast_text)
+
+    def _push(msg: str):
+        if req.line_user_id:
+            push_to_line_user(req.line_user_id, msg)
+        else:
+            from line_bot import broadcast_text
+            broadcast_text(msg)
+
+    triggered = run_alert_check(req.conditions, _openai, _push)
     return {"status": "success", "triggered": triggered, "count": len(triggered)}
+
+
+# ── LINE 帳號綁定碼 ───────────────────────────────────────────
+class LineBindRequest(BaseModel):
+    user_id: str
+
+@app.post("/api/v1/line/generate-code")
+def line_generate_code(req: LineBindRequest):
+    """為已登入的 Supabase user 產生 6 碼 LINE 綁定驗證碼（5 分鐘有效）"""
+    if not req.user_id:
+        raise HTTPException(status_code=400, detail="user_id 不可為空")
+    code = generate_binding_code(req.user_id)
+    return {"status": "success", "code": code, "expires_in": 300}
 
 
 # ── 回測 ─────────────────────────────────────────────────────
@@ -507,7 +528,7 @@ async def line_webhook(request: Request):
     body      = await request.body()
     signature = request.headers.get("X-Line-Signature", "")
     try:
-        handle_webhook(body.decode("utf-8"), signature)
+        handle_webhook(body.decode("utf-8"), signature, openai_client=_openai)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except RuntimeError as e:

@@ -23,7 +23,7 @@ const CONDITION_OPTIONS = [
 
 const needsThreshold = (t) => t === 'price_above' || t === 'price_below';
 
-export default function AlertSettings({ user }) {
+export default function AlertSettings({ user, lineUserId }) {
   const [conditions,   setConditions]   = useState([]);
   const [showForm,     setShowForm]     = useState(false);
   const [checking,     setChecking]     = useState(false);
@@ -70,7 +70,10 @@ export default function AlertSettings({ user }) {
     if (!enabled.length) return;
     setChecking(true); setCheckDone(false);
     try {
-      const { data } = await axios.post(`${API}/api/v1/alerts/check`, { conditions: enabled });
+      const { data } = await axios.post(`${API}/api/v1/alerts/check`, {
+        conditions:   enabled,
+        line_user_id: lineUserId || null,
+      });
       setTriggered(data.triggered || []);
     } catch { setTriggered([]); }
     finally { setChecking(false); setCheckDone(true); }

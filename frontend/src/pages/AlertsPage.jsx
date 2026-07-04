@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import AlertSettings from '../components/AlertSettings';
 import { useResponsive } from '../hooks/useResponsive';
 
-export default function AlertsPage({ user }) {
+export default function AlertsPage({ user, profile }) {
   const { isMobile } = useResponsive();
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '48px 52px 80px' }}>
@@ -24,7 +24,7 @@ export default function AlertsPage({ user }) {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
         style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: 32 }}
       >
-        <AlertSettings user={user} />
+        <AlertSettings user={user} lineUserId={profile?.line_user_id} />
       </motion.div>
     </div>
   );
