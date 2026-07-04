@@ -151,27 +151,18 @@ def _parse_twse_msg(msg: Dict, exchange: str) -> Dict:
     }
 
 
-# Sub-category names to SKIP (already rolled into the aggregate row)
-_INST_SKIP_SUBSTR = ("三大法人", "Foreign_Dealer_Self", "Dealer_self", "Dealer_Hedging",
-                     "外資自營商", "自營商(自行", "自營商(避險", "自營商自行", "自營商避險")
-
-
 def _inst_key(name: str) -> Optional[str]:
     """Map a FinMind institution name to internal key, or None to skip."""
-    if not name:
+    if not name or "三大法人" in name:
         return None
-    # Skip sub-categories and totals
-    for skip in _INST_SKIP_SUBSTR:
-        if skip in name:
-            return None
-    # Foreign investors (外資及陸資 / Foreign_Investor)
-    if "外資" in name or "Foreign" in name:
+    # Foreign investors (外資 + 外資自營商 → both count as foreign capital)
+    if "Foreign" in name or "外資" in name:
         return "foreign"
-    # Investment trust
-    if "投信" in name or "Investment_Trust" in name:
+    # Investment trust funds
+    if "Investment_Trust" in name or "投信" in name:
         return "trust"
-    # Dealers (自營商合計 / Dealer)
-    if "自營" in name or "Dealer" in name:
+    # Dealers — Dealer_self + Dealer_Hedging are the only rows FinMind provides
+    if "Dealer" in name or "自營" in name:
         return "dealer"
     return None
 
