@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import Sidebar    from './components/Sidebar';
-import AuthModal  from './components/AuthModal';
-import { supabase } from './lib/supabase';
+import Sidebar       from './components/Sidebar';
+import AuthModal     from './components/AuthModal';
+import ProfileModal  from './components/ProfileModal';
+import { supabase }  from './lib/supabase';
+import { useUserProfile } from './hooks/useUserProfile';
 
 import HomePage       from './pages/HomePage';
 import DashboardPage  from './pages/DashboardPage';
@@ -12,6 +14,7 @@ import AnalysisPage   from './pages/AnalysisPage';
 import ScreenerPage   from './pages/ScreenerPage';
 import JournalPage    from './pages/JournalPage';
 import LazyPickerPage from './pages/LazyPickerPage';
+import AssistantPage  from './pages/AssistantPage';
 
 import './App.css';
 
@@ -22,6 +25,7 @@ const PAGE_TITLES = {
   '/screener':    '選股濾網',
   '/journal':     '投資手札',
   '/lazy-picker': '零股選股器',
+  '/assistant':   '選股助手',
 };
 
 export default function App() {
@@ -32,6 +36,9 @@ export default function App() {
   const [watchlist,    setWatchlist]    = useState([]);
   const [sidebarOpen,  setSidebarOpen]  = useState(false);
   const [showAuth,     setShowAuth]     = useState(false);
+  const [showProfile,  setShowProfile]  = useState(false);
+
+  const { profile, saving, saveProfile } = useUserProfile(user);
 
   /* ── Auth ── */
   useEffect(() => {
@@ -51,7 +58,11 @@ export default function App() {
 
   return (
     <div className="artisan-bg" style={{ minHeight: '100vh' }}>
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onOpenProfile={() => { setSidebarOpen(false); setShowProfile(true); }}
+      />
 
       {/* ── Navbar ── */}
       <nav style={{
@@ -124,7 +135,9 @@ export default function App() {
         >
           <Routes location={location}>
             <Route path="/"          element={<HomePage user={user} />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard" element={
+              <DashboardPage portfolio={watchlist} profile={profile} />
+            } />
             <Route path="/analysis"  element={
               <AnalysisPage
                 user={user}
@@ -141,11 +154,24 @@ export default function App() {
               />
             } />
             <Route path="/lazy-picker" element={<LazyPickerPage />} />
+            <Route path="/assistant"  element={
+              <AssistantPage profile={profile} portfolio={watchlist} />
+            } />
           </Routes>
         </motion.div>
       </AnimatePresence>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      <AnimatePresence>
+        {showProfile && (
+          <ProfileModal
+            profile={profile}
+            saving={saving}
+            onSave={saveProfile}
+            onClose={() => setShowProfile(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

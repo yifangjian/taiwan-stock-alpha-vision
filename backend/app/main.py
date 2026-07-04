@@ -27,6 +27,8 @@ from line_bot                import handle_webhook
 from scheduler               import create_scheduler
 from services.smart_money    import get_smart_money_cost
 from services.ta_analysis    import compute_ta, get_candles as _get_candles
+from services.morning_brief  import get_morning_brief
+from services.ai_assistant   import run_assistant
 
 try:
     from openai import OpenAI
@@ -355,6 +357,77 @@ def lazy_picker_endpoint(req: LazyPickerRequest):
     if not picks:
         raise HTTPException(status_code=404, detail="目前市況無符合篩選條件的標的，建議稍後再試或放寬預算")
     return {"status": "success", "budget": req.budget, "risk_pref": req.risk_pref, "picks": picks}
+
+
+# ── 個人化早報 ───────────────────────────────────────────────
+class MorningBriefRequest(BaseModel):
+    portfolio: list[str] = []
+    profile:   dict      = {}
+
+@app.post("/api/v1/morning-brief")
+def morning_brief_endpoint(req: MorningBriefRequest):
+    """根據持股 + 用戶偏好，生成當日個人化早報（每日快取）"""
+    result = get_morning_brief(req.portfolio, req.profile, _openai)
+    return {"status": "success", **result}
+
+
+# ── 白話新聞解讀 ─────────────────────────────────────────────
+class NewsInterpretRequest(BaseModel):
+    title:     str
+    content:   str       = ""
+    profile:   dict      = {}
+    portfolio: list[str] = []
+
+@app.post("/api/v1/news/interpret")
+def news_interpret_endpoint(req: NewsInterpretRequest):
+    """用白話解讀一則財經新聞，並分析對用戶持股的影響"""
+    from services.user_profile import build_system_prompt
+    if not _openai:
+        raise HTTPException(status_code=503, detail="AI 未連線")
+
+    system_prompt = build_system_prompt(req.profile, req.portfolio)
+    portfolio_str = "、".join(req.portfolio) if req.portfolio else "尚未設定持股"
+    article_body  = req.content[:800] if req.content else "（無內文，請根據標題解讀）"
+
+    user_msg = (
+        f"新聞標題：{req.title}\n"
+        f"新聞內文摘要：{article_body}\n\n"
+        f"請做兩件事：\n"
+        f"1. 用 60 字以內的白話文解釋這則新聞在說什麼（去掉所有術語）\n"
+        f"2. 用 60 字以內說明這則新聞對用戶持股（{portfolio_str}）的可能影響（若無關則說明）\n\n"
+        f"格式：白話解讀：xxx\n持股影響：xxx"
+    )
+    try:
+        resp = _openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user",   "content": user_msg},
+            ],
+            max_tokens=300,
+        )
+        raw   = resp.choices[0].message.content.strip()
+        lines = raw.split("\n")
+        plain = next((l.replace("白話解讀：","").strip() for l in lines if "白話解讀" in l), raw)
+        impact= next((l.replace("持股影響：","").strip() for l in lines if "持股影響" in l), "")
+        return {"status": "success", "plain_text": plain, "portfolio_impact": impact}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"解讀失敗: {e}")
+
+
+# ── AI 選股助手（Function Calling）────────────────────────────
+class AssistantRequest(BaseModel):
+    messages:  list[dict] = []
+    profile:   dict       = {}
+    portfolio: list[str]  = []
+
+@app.post("/api/v1/assistant/chat")
+def assistant_chat_endpoint(req: AssistantRequest):
+    """互動式 AI 選股助手，支援 function calling 查詢股票資料"""
+    if not req.messages:
+        raise HTTPException(status_code=400, detail="messages 不可為空")
+    result = run_assistant(req.messages, req.profile, req.portfolio, _openai)
+    return {"status": "success", **result}
 
 
 # ── 回測 ─────────────────────────────────────────────────────

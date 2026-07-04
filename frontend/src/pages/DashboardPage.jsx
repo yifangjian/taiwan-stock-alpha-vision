@@ -6,8 +6,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts';
-import BacktestModal     from '../components/BacktestModal';
-import PositionCalculator from '../components/PositionCalculator';
+import BacktestModal        from '../components/BacktestModal';
+import PositionCalculator   from '../components/PositionCalculator';
+import MorningBriefBanner   from '../components/MorningBriefBanner';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -52,7 +53,7 @@ function AnimatedCounter({ value, style, className }) {
 }
 
 /* ════════════════════════════════════════════════════════════ */
-export default function DashboardPage() {
+export default function DashboardPage({ portfolio, profile }) {
   const [macroData,     setMacroData]     = useState([]);
   const [chipData,      setChipData]      = useState([]);
   const [sentimentData, setSentimentData] = useState(null);
@@ -95,6 +96,9 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 52px 80px' }}>
+
+      {/* 個人化早報 Banner */}
+      <MorningBriefBanner portfolio={portfolio || []} profile={profile || {}} />
 
       {/* Page header */}
       <motion.div {...FU()} style={{ marginBottom: 48 }}>

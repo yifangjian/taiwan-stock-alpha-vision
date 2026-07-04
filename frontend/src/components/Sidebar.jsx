@@ -2,14 +2,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const NAV = [
-  { icon: '💰', label: '零股選股器',  path: '/lazy-picker', featured: true },
+  { icon: '🤖', label: 'AI 選股助手', path: '/assistant', featured: true },
+  { icon: '💰', label: '零股選股器',  path: '/lazy-picker' },
   { icon: '📊', label: '戰情中心',    path: '/dashboard' },
   { icon: '🔍', label: '個股分析',    path: '/analysis' },
   { icon: '🔎', label: '選股濾網',    path: '/screener' },
   { icon: '📓', label: '投資手札',    path: '/journal' },
 ];
 
-export default function Sidebar({ open, onClose }) {
+export default function Sidebar({ open, onClose, onOpenProfile }) {
   const navigate  = useNavigate();
   const location  = useLocation();
 
@@ -88,9 +89,26 @@ export default function Sidebar({ open, onClose }) {
               })}
             </nav>
 
-            {/* Footer */}
-            <div style={{ padding: '20px 28px', borderTop: '1px solid #EDE9E2' }}>
-              <p style={{ fontSize: 11, color: '#CFC9BF', fontFamily: 'monospace', letterSpacing: 1, margin: 0 }}>
+            {/* Footer: profile + disclaimer */}
+            <div style={{ padding: '16px 16px 20px', borderTop: '1px solid #EDE9E2' }}>
+              {onOpenProfile && (
+                <motion.button
+                  whileHover={{ background: 'rgba(163,144,124,0.06)', transition: { duration: 0.2 } }}
+                  onClick={onOpenProfile}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    width: '100%', padding: '10px 12px',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontFamily: "'Noto Serif TC', serif", fontSize: 14,
+                    color: '#A3907C', textAlign: 'left', borderRadius: 6,
+                    marginBottom: 12,
+                  }}
+                >
+                  <span style={{ fontSize: 15 }}>⚙️</span>
+                  <span>個人偏好設定</span>
+                </motion.button>
+              )}
+              <p style={{ fontSize: 11, color: '#CFC9BF', fontFamily: 'monospace', letterSpacing: 1, margin: 0, paddingLeft: 12 }}>
                 數據僅供參考，不構成投資建議
               </p>
             </div>
