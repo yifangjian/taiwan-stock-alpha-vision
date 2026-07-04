@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import Sidebar     from './components/Sidebar';
-import AuthModal   from './components/AuthModal';
-import { supabase } from './lib/supabase';
+import Sidebar             from './components/Sidebar';
+import AuthModal           from './components/AuthModal';
+import AnimatedBackground  from './components/AnimatedBackground';
+import { supabase }        from './lib/supabase';
 
 import HomePage       from './pages/HomePage';
 import DashboardPage  from './pages/DashboardPage';
@@ -50,7 +51,12 @@ export default function App() {
   const pageTitle = PAGE_TITLES[location.pathname] || 'AlphaVision';
 
   return (
-    <div style={{ background: '#F9F6F0', minHeight: '100vh' }}>
+    <div style={{ background: '#F9F6F0', minHeight: '100vh', position: 'relative' }}>
+      {/* 全站固定背景動畫 */}
+      <AnimatedBackground />
+
+      {/* 所有前景內容需在 background 之上 */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* ── Navbar ── */}
@@ -146,6 +152,7 @@ export default function App() {
       </AnimatePresence>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      </div>{/* end foreground wrapper */}
     </div>
   );
 }
