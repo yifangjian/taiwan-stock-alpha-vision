@@ -507,6 +507,23 @@ def line_generate_code(req: LineBindRequest):
     return {"status": "success", "code": code, "expires_in": 300}
 
 
+# ── 即時報價 + 五檔（TWSE MIS，免費）───────────────────────────
+@app.get("/api/v1/stock/realtime/{stock_id}")
+def get_realtime(stock_id: str):
+    """TWSE MIS 即時成交價 + 委買委賣五檔。盤中每 ~5 秒更新，完全免費。"""
+    from services.finmind_service import get_realtime_twse
+    return get_realtime_twse(stock_id)
+
+
+# ── 基本面：EPS / 月營收 / 股利（FinMind）──────────────────────
+@app.get("/api/v1/stock/fundamentals/{stock_id}")
+def get_stock_fundamentals(stock_id: str):
+    """FinMind API：財務三率、EPS、月營收、股利歷史（3 年）"""
+    from services.finmind_service import get_fundamentals
+    result = get_fundamentals(stock_id)
+    return {"status": "success", **result}
+
+
 # ── 回測 ─────────────────────────────────────────────────────
 @app.post("/api/v1/backtest")
 def backtest(

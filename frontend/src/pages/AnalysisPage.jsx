@@ -5,6 +5,8 @@ import DistributionChart        from '../components/DistributionChart';
 import ArtisanInteractiveChart  from '../components/ArtisanInteractiveChart';
 import SmartMoneyChart          from '../components/SmartMoneyChart';
 import NewsFilter               from '../components/NewsFilter';
+import RealtimePrice            from '../components/RealtimePrice';
+import FundamentalsCard         from '../components/FundamentalsCard';
 import { supabase }             from '../lib/supabase';
 import { useResponsive }        from '../hooks/useResponsive';
 
@@ -333,6 +335,11 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
               </motion.div>
             )}
 
+            {/* Real-time price + 五檔 */}
+            <motion.div variants={SECTION_VAR} initial="hidden" animate="show">
+              <RealtimePrice stockId={stockHealth.stock_id} />
+            </motion.div>
+
             {/* Interactive K-line chart */}
             <motion.div
               variants={SECTION_VAR} initial="hidden" animate="show"
@@ -342,6 +349,11 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
                 K 線 · 均線 · 技術指標
               </div>
               <ArtisanInteractiveChart stockId={stockHealth.stock_id} />
+            </motion.div>
+
+            {/* Fundamentals: EPS / Revenue / Dividend / Ratios */}
+            <motion.div variants={SECTION_VAR} initial="hidden" animate="show">
+              <FundamentalsCard stockId={stockHealth.stock_id} />
             </motion.div>
 
             {/* Smart money */}
