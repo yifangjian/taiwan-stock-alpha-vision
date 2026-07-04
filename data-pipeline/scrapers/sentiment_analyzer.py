@@ -10,7 +10,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from ptt_stock_scraper import fetch_ptt_stock_titles
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+try:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+except Exception:
+    client = None
 
 
 def analyze_ptt_sentiment(macro_score=None, macro_label=None, chip_net_billion=None):
@@ -46,6 +49,9 @@ def analyze_ptt_sentiment(macro_score=None, macro_label=None, chip_net_billion=N
 4. "eli5_advice": 結合今日景氣燈號與法人動向，用對待投資新手的白話口吻，寫出一段 50 字以內的今日操作建議。不可使用艱澀術語，語氣要溫暖親切。
 
 只回傳 JSON，不要有其他文字。"""
+
+    if client is None:
+        return None
 
     print("正在呼叫 OpenAI 進行情緒分析...")
     response = client.chat.completions.create(
