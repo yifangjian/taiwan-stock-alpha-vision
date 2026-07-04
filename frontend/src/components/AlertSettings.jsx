@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { supabase } from '../lib/supabase';
+import { useResponsive } from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 const LBL = { fontFamily: 'monospace', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: '#B5ADA4' };
@@ -24,6 +25,7 @@ const CONDITION_OPTIONS = [
 const needsThreshold = (t) => t === 'price_above' || t === 'price_below';
 
 export default function AlertSettings({ user, lineUserId }) {
+  const { isMobile } = useResponsive();
   const [conditions,   setConditions]   = useState([]);
   const [showForm,     setShowForm]     = useState(false);
   const [checking,     setChecking]     = useState(false);
@@ -220,7 +222,9 @@ export default function AlertSettings({ user, lineUserId }) {
               style={{
                 position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                 zIndex: 301, background: '#FFFFFF', border: '1px solid #EDE9E2',
-                padding: 36, width: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+                padding: isMobile ? '24px 16px' : 36,
+                width: isMobile ? 'calc(100vw - 32px)' : 400,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
               }}
             >
               <div style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 16, color: '#3E3A39', marginBottom: 24 }}>新增條件</div>

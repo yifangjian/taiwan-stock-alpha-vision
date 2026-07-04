@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import JournalTimeline from '../components/JournalTimeline';
+import { useResponsive } from '../hooks/useResponsive';
 
 const FU = (d = 0) => ({
   initial: { opacity: 0, y: 28 }, animate: { opacity: 1, y: 0 },
@@ -7,8 +8,9 @@ const FU = (d = 0) => ({
 });
 
 export default function JournalPage({ user, supabase, onShowAuth }) {
+  const { isMobile } = useResponsive();
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto', padding: '48px 52px 80px' }}>
+    <div style={{ maxWidth: 860, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '48px 52px 80px' }}>
 
       {/* Page header */}
       <motion.div {...FU()} style={{ marginBottom: 48 }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { useResponsive } from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -92,7 +93,7 @@ function DeepInsightsCard({ entries }) {
 }
 
 /* ── Timeline Entry Card ─────────────────────────────────────── */
-function TimelineEntry({ entry, index }) {
+function TimelineEntry({ entry, index, isMobile }) {
   const clr  = ACTION_CLR[entry.action] || '#A3907C';
   const date = entry.created_at
     ? new Date(entry.created_at).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -104,25 +105,29 @@ function TimelineEntry({ entry, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: index * 0.06 }}
-      style={{ display: 'flex', gap: '0', marginBottom: '28px' }}
+      style={{ display: 'flex', gap: '0', marginBottom: isMobile ? '12px' : '28px' }}
     >
-      {/* Circle node */}
-      <div style={{
-        width: 40, flexShrink: 0, display: 'flex',
-        justifyContent: 'center', paddingTop: 22, position: 'relative', zIndex: 1,
-      }}>
+      {/* Circle node — hidden on mobile */}
+      {!isMobile && (
         <div style={{
-          width: 12, height: 12, borderRadius: '50%', background: clr,
-          boxShadow: `0 0 0 3px #F9F6F0, 0 0 0 4px ${clr}55`,
-        }} />
-      </div>
+          width: 40, flexShrink: 0, display: 'flex',
+          justifyContent: 'center', paddingTop: 22, position: 'relative', zIndex: 1,
+        }}>
+          <div style={{
+            width: 12, height: 12, borderRadius: '50%', background: clr,
+            boxShadow: `0 0 0 3px #F9F6F0, 0 0 0 4px ${clr}55`,
+          }} />
+        </div>
+      )}
 
       {/* Card */}
       <motion.div
         whileHover={{ boxShadow: '0 8px 32px rgba(0,0,0,0.07)', transition: { duration: 0.3 } }}
         style={{
           flex: 1, background: '#FFFFFF',
-          border: '1px solid #EDE9E2', padding: '20px 24px',
+          border: `1px solid ${isMobile ? clr + '33' : '#EDE9E2'}`,
+          borderLeft: isMobile ? `3px solid ${clr}` : '1px solid #EDE9E2',
+          padding: isMobile ? '14px 16px' : '20px 24px',
           boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
         }}
       >
@@ -195,6 +200,7 @@ function TimelineEntry({ entry, index }) {
 
 /* ── Main Component ──────────────────────────────────────────── */
 export default function JournalTimeline({ supabase, user }) {
+  const { isMobile } = useResponsive();
   const [entries,       setEntries]       = useState([]);
   const [showForm,      setShowForm]      = useState(false);
   const [form,          setForm]          = useState({ stock_symbol: '', action: '買入', note: '' });
@@ -288,10 +294,10 @@ export default function JournalTimeline({ supabase, user }) {
           >
             <form onSubmit={handleSubmit} style={{
               background: '#FFFFFF', border: '1px solid #EDE9E2',
-              padding: '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              padding: isMobile ? '20px 16px' : '32px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
             }}>
               {/* Stock + Action */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '32px', marginBottom: '28px', alignItems: 'end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto', gap: isMobile ? '16px' : '32px', marginBottom: '28px', alignItems: 'end' }}>
                 <div>
                   <label style={labelSt}>股票代號</label>
                   <input style={ulInput} placeholder="例：2330" value={form.stock_symbol}
@@ -377,16 +383,18 @@ export default function JournalTimeline({ supabase, user }) {
       {/* Timeline */}
       {entries.length > 0 ? (
         <div style={{ position: 'relative' }}>
-          {/* Vertical line */}
-          <div style={{
-            position: 'absolute', left: 19, top: 28, bottom: 28,
-            width: 1,
-            background: 'linear-gradient(to bottom, transparent, #A3907C 8%, #A3907C 92%, transparent)',
-            opacity: 0.45,
-            pointerEvents: 'none',
-          }} />
+          {/* Vertical line — desktop only */}
+          {!isMobile && (
+            <div style={{
+              position: 'absolute', left: 19, top: 28, bottom: 28,
+              width: 1,
+              background: 'linear-gradient(to bottom, transparent, #A3907C 8%, #A3907C 92%, transparent)',
+              opacity: 0.45,
+              pointerEvents: 'none',
+            }} />
+          )}
           {entries.map((entry, i) => (
-            <TimelineEntry key={entry.id} entry={entry} index={i} />
+            <TimelineEntry key={entry.id} entry={entry} index={i} isMobile={isMobile} />
           ))}
         </div>
       ) : (

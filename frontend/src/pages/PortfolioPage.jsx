@@ -37,6 +37,7 @@ function MonthChip({ month, hasDiv }) {
 
 /* ─── Compound Calculator ────────────────────────────────── */
 function CompoundCalculator() {
+  const { isMobile: isMob } = useResponsive();
   const [principal, setPrincipal] = useState('100000');
   const [yield_,    setYield_]    = useState('5');
   const [years,     setYears]     = useState('10');
@@ -67,7 +68,7 @@ function CompoundCalculator() {
         股息再投入複利試算
       </h3>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMob ? '1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
         {[
           { label: '本金（元）',   val: principal, set: setPrincipal, ph: '100000' },
           { label: '年殖利率（%）', val: yield_,    set: setYield_,    ph: '5' },
@@ -132,6 +133,50 @@ function CompoundCalculator() {
         </div>
       )}
     </div>
+  );
+}
+
+/* ─── Holding Card (mobile) ──────────────────────────────── */
+function HoldingCard({ h, price, onEdit, onDelete }) {
+  const cost     = parseFloat(h.avg_cost) || 0;
+  const qty      = parseInt(h.shares)    || 0;
+  const cur      = parseFloat(price)     || 0;
+  const costVal  = Math.round(cost * qty);
+  const curVal   = cur ? Math.round(cur * qty) : null;
+  const pnl      = curVal != null ? curVal - costVal : null;
+  const pnlPct   = pnl != null && costVal ? (pnl / costVal * 100).toFixed(2) : null;
+  const pnlColor = pnl == null ? '#857870' : pnl >= 0 ? '#4A9B6F' : '#C0392B';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.35 }}
+      style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: '16px 18px' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 15, color: '#3E3A39' }}>{h.stock_id}</div>
+          {h.stock_name && <div style={{ fontSize: 12, color: '#B5ADA4', marginTop: 2 }}>{h.stock_name}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => onEdit(h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#A3907C', fontSize: 13, fontFamily: 'monospace' }}>編輯</button>
+          <button onClick={() => onDelete(h.stock_id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#CFC9BF', fontSize: 13, fontFamily: 'monospace' }}>刪除</button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px 20px' }}>
+        {[
+          { label: '股數',    val: qty.toLocaleString() },
+          { label: '均成本',  val: `NT$ ${cost.toFixed(2)}` },
+          { label: '現價',    val: cur ? `NT$ ${cur.toFixed(2)}` : '—' },
+          { label: '浮動損益', val: curVal != null ? `${pnl >= 0 ? '+' : ''}${pnl.toLocaleString()} (${pnlPct}%)` : '—', color: pnlColor },
+        ].map(({ label, val, color }) => (
+          <div key={label}>
+            <div style={{ ...LBL, fontSize: 9 }}>{label}</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 13, color: color || '#3E3A39', marginTop: 3 }}>{val}</div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 
@@ -265,17 +310,20 @@ export default function PortfolioPage({ user }) {
       </motion.div>
 
       {/* Tab bar */}
-      <motion.div {...FU(0.06)} style={{ display: 'flex', gap: 0, marginBottom: 36, borderBottom: '1px solid #EDE9E2' }}>
+      <motion.div {...FU(0.06)} style={{ display: 'flex', gap: 0, marginBottom: 36, borderBottom: '1px solid #EDE9E2', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             style={{
-              padding: '12px 22px', background: 'none', border: 'none', cursor: 'pointer',
-              fontFamily: "'Noto Serif TC', serif", fontSize: 14,
+              padding: isMobile ? '9px 14px' : '12px 22px',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: "'Noto Serif TC', serif", fontSize: isMobile ? 13 : 14,
               color: tab === t.id ? '#3E3A39' : '#B5ADA4',
               borderBottom: tab === t.id ? '2px solid #B85C38' : '2px solid transparent',
               transition: 'all 0.2s', marginBottom: -1,
+              flex: isMobile ? '1 1 auto' : 'none',
+              textAlign: 'center',
             }}
           >
             {t.label}
@@ -314,24 +362,32 @@ export default function PortfolioPage({ user }) {
                 </div>
               )}
 
-              {/* Table */}
+              {/* Table / Cards */}
               {holdings.length > 0 && (
-                <div style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', marginBottom: 20, overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid #EDE9E2' }}>
-                        {['代號', '名稱', '股數', '均成本', '現價', '浮動損益', '操作'].map(h => (
-                          <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontFamily: 'monospace', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: '#B5ADA4', whiteSpace: 'nowrap' }}>{h}</th>
+                isMobile ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                    {holdings.map(h => (
+                      <HoldingCard key={h.stock_id} h={h} price={prices[h.stock_id]} onEdit={openEdit} onDelete={deleteHolding} />
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', marginBottom: 20, overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '2px solid #EDE9E2' }}>
+                          {['代號', '名稱', '股數', '均成本', '現價', '浮動損益', '操作'].map(h => (
+                            <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontFamily: 'monospace', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: '#B5ADA4', whiteSpace: 'nowrap' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {holdings.map(h => (
+                          <HoldingRow key={h.stock_id} h={h} price={prices[h.stock_id]} onEdit={openEdit} onDelete={deleteHolding} />
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {holdings.map(h => (
-                        <HoldingRow key={h.stock_id} h={h} price={prices[h.stock_id]} onEdit={openEdit} onDelete={deleteHolding} />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </tbody>
+                    </table>
+                  </div>
+                )
               )}
 
               <motion.button
@@ -359,8 +415,8 @@ export default function PortfolioPage({ user }) {
               <h3 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 18, fontWeight: 400, color: '#3E3A39', margin: '0 0 24px' }}>配息月曆</h3>
 
               {/* Month grid */}
-              <div style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: 24, marginBottom: 24 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8 }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: isMobile ? 16 : 24, marginBottom: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(6, 1fr)' : 'repeat(12, 1fr)', gap: 6 }}>
                   {MONTHS.map((m, i) => {
                     const month = i + 1;
                     const hasDiv = Object.values(dividends).some(d => d.ex_months?.includes(month));
@@ -441,7 +497,9 @@ export default function PortfolioPage({ user }) {
               style={{
                 position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                 zIndex: 301, background: '#FFFFFF', border: '1px solid #EDE9E2',
-                padding: 36, width: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+                padding: isMobile ? '24px 20px' : 36,
+                width: isMobile ? 'calc(100vw - 32px)' : 420,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
               }}
             >
               <div style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 16, color: '#3E3A39', marginBottom: 24 }}>

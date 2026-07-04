@@ -153,7 +153,7 @@ export default function DashboardPage({ portfolio, profile }) {
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
             景氣對策信號
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={isMobile ? 180 : 280}>
             <AreaChart data={macroData}>
               <defs>
                 <linearGradient id="macroGrad" x1="0" y1="0" x2="0" y2="1">
@@ -162,8 +162,8 @@ export default function DashboardPage({ portfolio, profile }) {
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="transparent" />
-              <XAxis dataKey="Date" stroke={C.axis} axisLine={axisLine} tickLine={false} tick={{ ...C.tick, fontSize: 10 }} />
-              <YAxis stroke={C.axis} domain={[0, 50]} axisLine={axisLine} tickLine={false} tick={C.tick} />
+              <XAxis dataKey="Date" stroke={C.axis} axisLine={axisLine} tickLine={false} tick={{ ...C.tick, fontSize: 10 }} interval={isMobile ? 8 : 'preserveStartEnd'} />
+              <YAxis stroke={C.axis} domain={[0, 50]} axisLine={axisLine} tickLine={false} tick={C.tick} width={isMobile ? 30 : 40} />
               <Tooltip contentStyle={C.tip} />
               <ReferenceLine y={38} stroke={C.red}    strokeDasharray="4 3" strokeOpacity={0.6} label={{ value: '紅燈', fill: C.red,    fontSize: 10, position: 'right' }} />
               <ReferenceLine y={16} stroke={C.accent} strokeDasharray="4 3" strokeOpacity={0.6} label={{ value: '藍燈', fill: C.accent, fontSize: 10, position: 'right' }} />
@@ -183,11 +183,11 @@ export default function DashboardPage({ portfolio, profile }) {
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
             三大法人買賣超
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={isMobile ? 180 : 280}>
             <BarChart data={chipData} barGap={4}>
               <CartesianGrid stroke="transparent" />
-              <XAxis dataKey="單位名稱" stroke={C.axis} axisLine={axisLine} tickLine={false} tick={{ ...C.tick, fontSize: 11 }} />
-              <YAxis stroke={C.axis} axisLine={axisLine} tickLine={false} tick={C.tick} width={90} tickFormatter={v => `${(v / 1e8).toFixed(0)}億`} />
+              <XAxis dataKey="單位名稱" stroke={C.axis} axisLine={axisLine} tickLine={false} tick={{ ...C.tick, fontSize: isMobile ? 9 : 11 }} />
+              <YAxis stroke={C.axis} axisLine={axisLine} tickLine={false} tick={{ ...C.tick, fontSize: isMobile ? 9 : 11 }} width={isMobile ? 42 : 90} tickFormatter={v => isMobile ? `${(v / 1e8).toFixed(0)}億` : `${(v / 1e8).toFixed(0)}億`} />
               <Tooltip contentStyle={C.tip} formatter={v => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD' }).format(v)} />
               <Legend wrapperStyle={{ color: '#B5ADA4', fontSize: 12, paddingTop: 8 }} />
               <Bar dataKey="買進金額" fill={C.green}  name="買進"    radius={[4, 4, 0, 0]} />

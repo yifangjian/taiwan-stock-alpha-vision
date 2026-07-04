@@ -20,6 +20,7 @@ const FU = (d = 0) => ({
 });
 
 function PickCard({ pick, index }) {
+  const { isMobile } = useResponsive();
   const bStyle = BADGE.bullish;
   return (
     <motion.div
@@ -39,7 +40,7 @@ function PickCard({ pick, index }) {
       }}
       style={{
         background: '#FFFFFF', border: '1px solid #EDE9E2',
-        padding: '36px 40px', position: 'relative', overflow: 'hidden',
+        padding: isMobile ? '24px 20px' : '36px 40px', position: 'relative', overflow: 'hidden',
       }}
     >
       {/* Stock identity */}
@@ -60,7 +61,12 @@ function PickCard({ pick, index }) {
       </div>
 
       {/* Stat row */}
-      <div style={{ display: 'flex', gap: 24, marginBottom: 28, paddingTop: 16, borderTop: '1px solid #F0ECE7', flexWrap: 'wrap' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+        gap: isMobile ? 16 : 24,
+        marginBottom: 28, paddingTop: 16, borderTop: '1px solid #F0ECE7',
+      }}>
         <div>
           <div style={{ fontSize: 9, fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 4 }}>
             Market Price

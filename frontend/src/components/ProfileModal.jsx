@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { useResponsive } from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -115,6 +116,7 @@ function LineBindSection({ user, lineBound, onBound }) {
 
 /* ── Main modal ── */
 export default function ProfileModal({ profile, saving, onSave, onClose, user }) {
+  const { isMobile } = useResponsive();
   const [draft, setDraft] = useState({ ...profile });
 
   useEffect(() => { setDraft({ ...profile }); }, [profile]);
@@ -156,7 +158,7 @@ export default function ProfileModal({ profile, saving, onSave, onClose, user })
           background: '#FFFFFF', border: '1px solid #EDE9E2',
           boxShadow: '0 24px 64px rgba(0,0,0,0.14)',
           width: '100%', maxWidth: 520,
-          padding: '40px 44px',
+          padding: isMobile ? '28px 20px' : '40px 44px',
           margin: 'auto',
         }}
       >
