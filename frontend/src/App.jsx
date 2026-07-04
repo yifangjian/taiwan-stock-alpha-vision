@@ -15,6 +15,8 @@ import ScreenerPage   from './pages/ScreenerPage';
 import JournalPage    from './pages/JournalPage';
 import LazyPickerPage from './pages/LazyPickerPage';
 import AssistantPage  from './pages/AssistantPage';
+import PortfolioPage  from './pages/PortfolioPage';
+import AlertsPage     from './pages/AlertsPage';
 
 import './App.css';
 
@@ -26,6 +28,8 @@ const PAGE_TITLES = {
   '/journal':     '投資手札',
   '/lazy-picker': '零股選股器',
   '/assistant':   '選股助手',
+  '/portfolio':   '投資組合',
+  '/alerts':      '條件推播',
 };
 
 export default function App() {
@@ -157,6 +161,8 @@ export default function App() {
             <Route path="/assistant"  element={
               <AssistantPage profile={profile} portfolio={watchlist} />
             } />
+            <Route path="/portfolio" element={<PortfolioPage user={user} />} />
+            <Route path="/alerts"    element={<AlertsPage user={user} />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

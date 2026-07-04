@@ -36,6 +36,9 @@ from services.smart_money    import get_smart_money_cost
 from services.ta_analysis    import compute_ta, get_candles as _get_candles
 from services.morning_brief  import get_morning_brief
 from services.ai_assistant   import run_assistant
+from services.dividend_info  import get_dividend_calendar, get_current_prices
+from services.margin_data    import get_margin_data
+from services.alert_checker  import run_alert_check
 
 try:
     from openai import OpenAI
@@ -435,6 +438,52 @@ def assistant_chat_endpoint(req: AssistantRequest):
         raise HTTPException(status_code=400, detail="messages 不可為空")
     result = run_assistant(req.messages, req.profile, req.portfolio, _openai)
     return {"status": "success", **result}
+
+
+# ── 持倉現價查詢 ─────────────────────────────────────────────
+@app.get("/api/v1/portfolio/prices")
+def portfolio_prices(stocks: str = Query(..., description="逗號分隔代號，例如 2330,2881")):
+    """批次查詢持股現價，用於持倉損益計算"""
+    ids = [s.strip() for s in stocks.split(",") if s.strip().isdigit()]
+    if not ids:
+        raise HTTPException(status_code=400, detail="stocks 參數不合法")
+    return {"status": "success", "prices": get_current_prices(ids)}
+
+
+# ── 配息月曆 ─────────────────────────────────────────────────
+@app.get("/api/v1/portfolio/dividends")
+def portfolio_dividends(stocks: str = Query(..., description="逗號分隔代號")):
+    """查詢持股配息資訊（殖利率、最近除息日、除息月份）"""
+    ids = [s.strip() for s in stocks.split(",") if s.strip().isdigit()]
+    if not ids:
+        raise HTTPException(status_code=400, detail="stocks 參數不合法")
+    return {"status": "success", "data": get_dividend_calendar(ids)}
+
+
+# ── 融資券資訊 ────────────────────────────────────────────────
+@app.get("/api/v1/chip/margin/{stock_id}")
+def get_margin(stock_id: str):
+    """TWSE 融資券餘額、券資比"""
+    if not stock_id.isdigit() or len(stock_id) not in (4, 5, 6):
+        raise HTTPException(status_code=400, detail="股票代號格式錯誤")
+    result = get_margin_data(stock_id)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return {"status": "success", **result}
+
+
+# ── 條件型推播檢查 ────────────────────────────────────────────
+class AlertCheckRequest(BaseModel):
+    conditions: list[dict] = []
+
+@app.post("/api/v1/alerts/check")
+def alert_check(req: AlertCheckRequest):
+    """立即檢查條件清單，回傳已觸發項目；若有 LINE token 同時推播"""
+    if not req.conditions:
+        return {"status": "success", "triggered": []}
+    from line_bot import broadcast_text
+    triggered = run_alert_check(req.conditions, _openai, broadcast_text)
+    return {"status": "success", "triggered": triggered, "count": len(triggered)}
 
 
 # ── 回測 ─────────────────────────────────────────────────────

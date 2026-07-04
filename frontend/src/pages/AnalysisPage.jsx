@@ -87,6 +87,7 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
   const [stockHealth,  setStockHealth]  = useState(null);
   const [distribution, setDistribution] = useState(null);
   const [smartMoney,   setSmartMoney]   = useState(null);
+  const [marginData,   setMarginData]   = useState(null);
   const [newsData,     setNewsData]     = useState(null);
   const [candles,      setCandles]      = useState([]);
   const [loading,      setLoading]      = useState(false);
@@ -98,19 +99,21 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
     setStockInput(sid);
     setLoading(true);
     setStockHealth(null); setDistribution(null); setSmartMoney(null);
-    setNewsData(null); setCandles([]); setError('');
+    setMarginData(null); setNewsData(null); setCandles([]); setError('');
 
     try {
-      const [hR, dR, smR, nR, cR] = await Promise.all([
+      const [hR, dR, smR, mR, nR, cR] = await Promise.all([
         axios.get(`${API}/api/v1/chip/stock/${sid}`),
         axios.get(`${API}/api/v1/chip/distribution/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/chip/smart-money/${sid}`).catch(() => null),
+        axios.get(`${API}/api/v1/chip/margin/${sid}`).catch(() => null),
         axios.get(`${API}/api/v1/news/filter/${sid}`).catch(() => null),
         fetchCandles(sid),
       ]);
       setStockHealth(hR.data);
       if (dR)  setDistribution(dR.data);
       if (smR) setSmartMoney(smR.data);
+      if (mR)  setMarginData(mR.data);
       if (nR)  setNewsData(nR.data);
       setCandles(cR);
     } catch (e) {
@@ -354,6 +357,34 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
             {smartMoney && (
               <motion.div variants={SECTION_VAR} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
                 <SmartMoneyChart data={smartMoney} />
+              </motion.div>
+            )}
+
+            {/* Margin trading 融資券 */}
+            {marginData && !marginData.error && (
+              <motion.div variants={SECTION_VAR} initial="hidden" animate="show" style={{ marginBottom: 28 }}>
+                <div style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: '24px 28px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+                  <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
+                    Margin Trading · 融資券籌碼
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                    {[
+                      { label: '融資餘額（張）', val: marginData.margin_balance?.toLocaleString(), sub: `較前日 ${marginData.margin_change >= 0 ? '+' : ''}${marginData.margin_change?.toLocaleString()}`, color: marginData.margin_change > 0 ? '#B85C38' : '#4A9B6F' },
+                      { label: '資使用率',       val: marginData.margin_ratio != null ? `${marginData.margin_ratio}%` : '—', sub: '融資水位', color: (marginData.margin_ratio || 0) > 60 ? '#B85C38' : '#4A9B6F' },
+                      { label: '融券餘額（張）', val: marginData.short_balance?.toLocaleString(), sub: `較前日 ${marginData.short_change >= 0 ? '+' : ''}${marginData.short_change?.toLocaleString()}`, color: marginData.short_change > 0 ? '#4A9B6F' : '#B85C38' },
+                      { label: '券資比',         val: marginData.short_ratio != null ? `${marginData.short_ratio}%` : '—', sub: '空方籌碼強度', color: (marginData.short_ratio || 0) > 30 ? '#B85C38' : '#857870' },
+                    ].map(({ label, val, sub, color }) => (
+                      <div key={label} style={{ padding: '16px 0', borderRight: '1px solid #F5F1EC' }}>
+                        <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 1, color: '#B5ADA4', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
+                        <div style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 22, color, fontWeight: 300 }}>{val ?? '—'}</div>
+                        {sub && <div style={{ fontSize: 11, color: '#B5ADA4', marginTop: 4, fontFamily: 'monospace' }}>{sub}</div>}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#CFC9BF', fontFamily: 'monospace', marginTop: 16 }}>
+                    資料來源：TWSE · {marginData.date?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}
+                  </div>
+                </div>
               </motion.div>
             )}
 

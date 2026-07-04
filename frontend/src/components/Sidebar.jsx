@@ -8,6 +8,8 @@ const NAV = [
   { icon: '🔍', label: '個股分析',    path: '/analysis' },
   { icon: '🔎', label: '選股濾網',    path: '/screener' },
   { icon: '📓', label: '投資手札',    path: '/journal' },
+  { icon: '💼', label: '投資組合',    path: '/portfolio' },
+  { icon: '🔔', label: '條件推播',    path: '/alerts' },
 ];
 
 export default function Sidebar({ open, onClose, onOpenProfile }) {
