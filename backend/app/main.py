@@ -1,5 +1,12 @@
 import os
 import sys
+
+# Force UTF-8 output encoding in any environment
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional
