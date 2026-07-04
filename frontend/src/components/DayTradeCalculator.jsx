@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useResponsive } from '../hooks/useResponsive';
 
 const ROW = { display: 'flex', flexDirection: 'column', gap: 6 };
 const LBL = { fontFamily: 'monospace', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4' };
@@ -19,6 +20,7 @@ function calcFee(amount, discount) {
 }
 
 export default function DayTradeCalculator() {
+  const { isMobile } = useResponsive();
   const [buyPrice,  setBuyPrice]  = useState('');
   const [sellPrice, setSellPrice] = useState('');
   const [shares,    setShares]    = useState('');
@@ -67,7 +69,7 @@ export default function DayTradeCalculator() {
         當沖損益計算器
       </h3>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
         {[
           { label: '買入價（元）',   val: buyPrice,  set: setBuyPrice,  ph: '例：150' },
           { label: '賣出價（元）',   val: sellPrice, set: setSellPrice, ph: '例：153' },
@@ -102,7 +104,7 @@ export default function DayTradeCalculator() {
           </div>
 
           {/* 明細 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px 24px' }}>
             {[
               ['買入金額', result.buyTotal.toLocaleString()],
               ['賣出金額', result.sellTotal.toLocaleString()],

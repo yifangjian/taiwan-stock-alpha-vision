@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { useResponsive } from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -96,6 +97,7 @@ function ResultCard({ stock, index }) {
 }
 
 export default function ScreenerPage() {
+  const { isMobile } = useResponsive();
   const [filters, setFilters] = useState({ ma_status: 'all', rsi_condition: 'all', macd_condition: 'all' });
   const [results,  setResults]  = useState([]);
   const [loading,  setLoading]  = useState(false);
@@ -128,7 +130,7 @@ export default function ScreenerPage() {
   );
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 52px 80px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '48px 52px 80px' }}>
 
       {/* Page header */}
       <motion.div {...FU()} style={{ marginBottom: 48 }}>
@@ -138,8 +140,8 @@ export default function ScreenerPage() {
 
       {/* Filter panel */}
       <motion.div {...FU(0.05)}
-        style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: '36px 40px', marginBottom: 40, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, marginBottom: 32 }}>
+        style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: isMobile ? '24px 20px' : '36px 40px', marginBottom: 40, boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? 16 : 28, marginBottom: 32 }}>
           {F('ma_status', {
             label: '均線條件',
             options: [
@@ -168,7 +170,7 @@ export default function ScreenerPage() {
           })}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 12 : 0 }}>
           <p style={{ fontSize: 12, color: '#B5ADA4', fontFamily: 'monospace', margin: 0 }}>
             篩選台股熱門 24 支股票 · 平行運算 · 約需 15–30 秒
           </p>
@@ -212,7 +214,7 @@ export default function ScreenerPage() {
               <p style={{ fontFamily: "'Noto Serif TC', serif", color: '#857870', fontSize: 15 }}>目前無股票符合所有條件，請放寬篩選條件</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 12 }}>
               {results.map((s, i) => <ResultCard key={s.stock_id} stock={s} index={i} />)}
             </div>
           )}

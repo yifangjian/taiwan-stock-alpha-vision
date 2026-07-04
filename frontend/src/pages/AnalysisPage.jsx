@@ -6,6 +6,7 @@ import ArtisanInteractiveChart  from '../components/ArtisanInteractiveChart';
 import SmartMoneyChart          from '../components/SmartMoneyChart';
 import NewsFilter               from '../components/NewsFilter';
 import { supabase }             from '../lib/supabase';
+import { useResponsive }        from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -83,6 +84,7 @@ async function fetchCandles(stockId, period = '3mo') {
 
 /* ════════════════════════════════════════════════════════════ */
 export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
+  const { isMobile } = useResponsive();
   const [stockInput,   setStockInput]   = useState('');
   const [stockHealth,  setStockHealth]  = useState(null);
   const [distribution, setDistribution] = useState(null);
@@ -133,7 +135,7 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 52px 80px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '48px 52px 80px' }}>
 
       {/* Page header */}
       <motion.div {...FU()} style={{ marginBottom: 48 }}>
@@ -274,7 +276,7 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
             {/* Health cards — staggered */}
             <motion.div
               variants={STAGGER} initial="hidden" animate="show"
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}
+              style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}
             >
               {[
                 { label: '外資短線態度', value: stockHealth.foreign_status,  ok: stockHealth.foreign_bullish },
@@ -367,7 +369,7 @@ export default function AnalysisPage({ user, watchlist, onWatchlistChange }) {
                   <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
                     Margin Trading · 融資券籌碼
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
                     {[
                       { label: '融資餘額（張）', val: marginData.margin_balance?.toLocaleString(), sub: `較前日 ${marginData.margin_change >= 0 ? '+' : ''}${marginData.margin_change?.toLocaleString()}`, color: marginData.margin_change > 0 ? '#B85C38' : '#4A9B6F' },
                       { label: '資使用率',       val: marginData.margin_ratio != null ? `${marginData.margin_ratio}%` : '—', sub: '融資水位', color: (marginData.margin_ratio || 0) > 60 ? '#B85C38' : '#4A9B6F' },

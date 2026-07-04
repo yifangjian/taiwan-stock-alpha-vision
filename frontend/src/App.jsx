@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useResponsive } from './hooks/useResponsive';
 
 import Sidebar       from './components/Sidebar';
 import AuthModal     from './components/AuthModal';
@@ -43,6 +44,7 @@ export default function App() {
   const [showProfile,  setShowProfile]  = useState(false);
 
   const { profile, saving, saveProfile } = useUserProfile(user);
+  const { isMobile } = useResponsive();
 
   /* ── Auth ── */
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function App() {
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0 36px', height: 60,
+        padding: isMobile ? '0 16px' : '0 36px', height: 60,
         background: 'rgba(249,246,240,0.9)',
         backdropFilter: 'blur(12px)',
         borderBottom: '1px solid #EDE9E2',
@@ -107,9 +109,11 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {supabase && user ? (
             <>
-              <span style={{ fontSize: 12, color: '#B5ADA4', fontFamily: 'monospace', letterSpacing: 1 }}>
-                {user.email?.split('@')[0]}
-              </span>
+              {!isMobile && (
+                <span style={{ fontSize: 12, color: '#B5ADA4', fontFamily: 'monospace', letterSpacing: 1 }}>
+                  {user.email?.split('@')[0]}
+                </span>
+              )}
               <motion.button
                 onClick={() => supabase.auth.signOut()}
                 whileHover={{ y: -1, transition: { duration: 0.2 } }}

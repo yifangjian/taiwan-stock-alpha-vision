@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useResponsive } from '../hooks/useResponsive';
 
 const FU = (d = 0) => ({
   initial: { opacity: 0, y: 36 }, whileInView: { opacity: 1, y: 0 },
@@ -7,34 +8,15 @@ const FU = (d = 0) => ({
 });
 
 const CARDS = [
-  {
-    num: '01', path: '/dashboard', icon: '📊',
-    title: '戰情中心',
-    desc: '即時景氣燈號、三大法人籌碼日報、PTT 散戶恐慌貪婪指數',
-    cta: '進入戰情室',
-  },
-  {
-    num: '02', path: '/analysis', icon: '🔍',
-    title: '個股 X 光機',
-    desc: '職人 K 線 · 主力成本帶 · AI 新聞濾鏡 · 集保股權分散分析',
-    cta: '開始分析',
-  },
-  {
-    num: '03', path: '/screener', icon: '🔎',
-    title: '選股濾網',
-    desc: '均線多頭排列、MACD 黃金交叉、RSI 超賣——複合條件篩出好股',
-    cta: '啟動篩選',
-  },
-  {
-    num: '04', path: '/journal', icon: '📓',
-    title: '投資手札',
-    desc: '時光軸覆盤日記 · AI 毒舌評語 · 職人沉澱報告——和自己的帳單誠實相對',
-    cta: '打開手札',
-  },
+  { num: '01', path: '/dashboard', icon: '📊', title: '戰情中心',    desc: '即時景氣燈號、三大法人籌碼日報、PTT 散戶恐慌貪婪指數', cta: '進入戰情室' },
+  { num: '02', path: '/analysis',  icon: '🔍', title: '個股 X 光機', desc: '職人 K 線 · 主力成本帶 · AI 新聞濾鏡 · 集保股權分散分析',    cta: '開始分析' },
+  { num: '03', path: '/screener',  icon: '🔎', title: '選股濾網',    desc: '均線多頭排列、MACD 黃金交叉、RSI 超賣——複合條件篩出好股',   cta: '啟動篩選' },
+  { num: '04', path: '/journal',   icon: '📓', title: '投資手札',    desc: '時光軸覆盤日記 · AI 毒舌評語 · 職人沉澱報告——和自己的帳單誠實相對', cta: '打開手札' },
 ];
 
 export default function HomePage({ user }) {
   const nav = useNavigate();
+  const { isMobile } = useResponsive();
 
   return (
     <div>
@@ -42,21 +24,22 @@ export default function HomePage({ user }) {
       <section style={{
         minHeight: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '120px 52px 80px', textAlign: 'center',
-        background: 'transparent',
+        padding: isMobile ? '80px 24px 60px' : '120px 52px 80px',
+        textAlign: 'center', background: 'transparent',
         position: 'relative', overflow: 'hidden',
       }}>
         <div style={{ width: 1, height: 60, background: 'linear-gradient(to bottom, transparent, #CFC9BF)', marginBottom: 32 }} />
 
         <motion.div {...FU(0)} style={{
-          fontFamily: 'monospace', fontSize: 11, letterSpacing: 4,
+          fontFamily: 'monospace', fontSize: isMobile ? 9 : 11, letterSpacing: 4,
           textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 28,
         }}>
           Taiwan Stock Intelligence Platform
         </motion.div>
 
         <motion.h1 {...FU(0.08)} style={{
-          fontFamily: "'Noto Serif TC', serif", fontSize: 'clamp(52px, 7vw, 88px)',
+          fontFamily: "'Noto Serif TC', serif",
+          fontSize: isMobile ? 'clamp(42px, 12vw, 64px)' : 'clamp(52px, 7vw, 88px)',
           fontWeight: 300, color: '#3E3A39', lineHeight: 1.2, margin: '0 0 12px',
         }}>
           {user ? (
@@ -69,7 +52,7 @@ export default function HomePage({ user }) {
         <motion.div {...FU(0.15)} style={{ width: 40, height: 1, background: '#CFC9BF', margin: '28px auto' }} />
 
         <motion.p {...FU(0.2)} style={{
-          fontFamily: "'Noto Serif TC', serif", fontSize: 16, color: '#857870',
+          fontFamily: "'Noto Serif TC', serif", fontSize: isMobile ? 14 : 16, color: '#857870',
           lineHeight: 1.9, maxWidth: 480, margin: '0 auto 48px',
         }}>
           整合國發會景氣燈號、三大法人籌碼、PTT 散戶情緒<br />
@@ -101,7 +84,7 @@ export default function HomePage({ user }) {
       </section>
 
       {/* ── Feature cards ── */}
-      <section style={{ padding: '80px 52px 100px', maxWidth: 1200, margin: '0 auto' }}>
+      <section style={{ padding: isMobile ? '48px 16px 72px' : '80px 52px 100px', maxWidth: 1200, margin: '0 auto' }}>
         <motion.div {...FU()} style={{ marginBottom: 40, textAlign: 'center' }}>
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
             Platform Modules
@@ -120,7 +103,8 @@ export default function HomePage({ user }) {
           onMouseLeave={e => e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.08)'}
           style={{
             background: '#3E3A39', cursor: 'pointer', marginBottom: 2,
-            padding: '44px 52px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            padding: isMobile ? '28px 24px' : '44px 52px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             transition: 'box-shadow 0.4s',
           }}
@@ -129,22 +113,26 @@ export default function HomePage({ user }) {
             <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 3, textTransform: 'uppercase', color: '#857870', marginBottom: 14 }}>
               ✦ New · 零股懶人神器
             </div>
-            <h3 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 26, fontWeight: 400, color: '#F9F6F0', margin: '0 0 12px' }}>
+            <h3 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: isMobile ? 20 : 26, fontWeight: 400, color: '#F9F6F0', margin: '0 0 12px' }}>
               五千元零股選股器
             </h3>
-            <p style={{ fontSize: 14, color: '#857870', lineHeight: 1.8, margin: 0 }}>
-              輸入預算 → AI 篩選 60MA 多頭 + 籌碼集中標的 → 告訴你買幾股、剩多少
-            </p>
+            {!isMobile && (
+              <p style={{ fontSize: 14, color: '#857870', lineHeight: 1.8, margin: 0 }}>
+                輸入預算 → AI 篩選 60MA 多頭 + 籌碼集中標的 → 告訴你買幾股、剩多少
+              </p>
+            )}
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 52 }}>
-            <div style={{ fontSize: 52 }}>💰</div>
-            <div style={{ color: '#B85C38', fontSize: 13, fontFamily: "'Noto Serif TC', serif", marginTop: 10, letterSpacing: 1 }}>
-              立即使用 →
-            </div>
+          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: isMobile ? 20 : 52 }}>
+            <div style={{ fontSize: isMobile ? 36 : 52 }}>💰</div>
+            {!isMobile && (
+              <div style={{ color: '#B85C38', fontSize: 13, fontFamily: "'Noto Serif TC', serif", marginTop: 10, letterSpacing: 1 }}>
+                立即使用 →
+              </div>
+            )}
           </div>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, marginTop: 2 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 2, marginTop: 2 }}>
           {CARDS.map((c, i) => (
             <motion.div
               key={c.path}
@@ -156,34 +144,32 @@ export default function HomePage({ user }) {
               onClick={() => nav(c.path)}
               style={{
                 background: '#FFFFFF', border: '1px solid #EDE9E2',
-                padding: '40px 44px', cursor: 'pointer',
+                padding: isMobile ? '28px 24px' : '40px 44px', cursor: 'pointer',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-                transition: 'box-shadow 0.4s',
-                display: 'flex', flexDirection: 'column',
+                transition: 'box-shadow 0.4s', display: 'flex', flexDirection: 'column',
               }}
               onMouseEnter={e => e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.08)'}
               onMouseLeave={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.03)'}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                 <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, color: '#CFC9BF' }}>#{c.num}</span>
-                <span style={{ fontSize: 24 }}>{c.icon}</span>
+                <span style={{ fontSize: 22 }}>{c.icon}</span>
               </div>
-              <h3 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 22, fontWeight: 500, color: '#3E3A39', margin: '0 0 12px' }}>
+              <h3 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: isMobile ? 18 : 22, fontWeight: 500, color: '#3E3A39', margin: '0 0 12px' }}>
                 {c.title}
               </h3>
-              <p style={{ fontSize: 14, color: '#857870', lineHeight: 1.8, margin: '0 0 32px', flex: 1 }}>
+              <p style={{ fontSize: 13, color: '#857870', lineHeight: 1.8, margin: '0 0 24px', flex: 1 }}>
                 {c.desc}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#A3907C', fontSize: 13, fontFamily: "'Noto Serif TC', serif" }}>
-                {c.cta}
-                <span style={{ fontSize: 16, marginTop: 1 }}>→</span>
+                {c.cta}<span style={{ fontSize: 16, marginTop: 1 }}>→</span>
               </div>
             </motion.div>
           ))}
         </div>
       </section>
 
-      <footer style={{ borderTop: '1px solid #EDE9E2', padding: '32px 52px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <footer style={{ borderTop: '1px solid #EDE9E2', padding: isMobile ? '24px 16px' : '32px 52px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <span style={{ fontFamily: "'Noto Serif TC', serif", color: '#B5ADA4', fontSize: 13 }}>AlphaVision Taiwan</span>
         <span style={{ fontSize: 12, color: '#CFC9BF', fontFamily: 'monospace' }}>數據僅供參考，不構成投資建議</span>
       </footer>

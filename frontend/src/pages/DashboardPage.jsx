@@ -9,6 +9,7 @@ import {
 import BacktestModal        from '../components/BacktestModal';
 import PositionCalculator   from '../components/PositionCalculator';
 import MorningBriefBanner   from '../components/MorningBriefBanner';
+import { useResponsive }    from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -54,6 +55,7 @@ function AnimatedCounter({ value, style, className }) {
 
 /* ════════════════════════════════════════════════════════════ */
 export default function DashboardPage({ portfolio, profile }) {
+  const { isMobile } = useResponsive();
   const [macroData,     setMacroData]     = useState([]);
   const [chipData,      setChipData]      = useState([]);
   const [sentimentData, setSentimentData] = useState(null);
@@ -93,7 +95,7 @@ export default function DashboardPage({ portfolio, profile }) {
   );
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 52px 80px' }}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '48px 52px 80px' }}>
 
       {/* 個人化早報 Banner */}
       <MorningBriefBanner portfolio={portfolio || []} profile={profile || {}} />
@@ -140,7 +142,7 @@ export default function DashboardPage({ portfolio, profile }) {
       {/* Charts grid — staggered entrance */}
       <motion.div
         variants={STAGGER} initial="hidden" whileInView="show" viewport={{ once: true }}
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }}
+        style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 16 : 24, marginBottom: 40 }}
       >
         {/* Macro signal */}
         <motion.div
@@ -202,9 +204,10 @@ export default function DashboardPage({ portfolio, profile }) {
           {...FU(0.08)}
           whileHover={{ y: -3, boxShadow: '0 16px 52px rgba(0,0,0,0.07)', transition: { duration: 0.35 } }}
           style={{
-            display: 'flex', gap: 48, alignItems: 'flex-start',
+            display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 20 : 48, alignItems: isMobile ? 'center' : 'flex-start',
             background: '#FFFFFF', border: '1px solid #EDE9E2',
-            padding: '36px 44px', marginBottom: 40,
+            padding: isMobile ? '24px 20px' : '36px 44px', marginBottom: 40,
             boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
           }}
         >
@@ -225,7 +228,7 @@ export default function DashboardPage({ portfolio, profile }) {
             </motion.div>
           </div>
 
-          <div style={{ borderLeft: '1px solid #EDE9E2', paddingLeft: 40 }}>
+          <div style={{ borderLeft: isMobile ? 'none' : '1px solid #EDE9E2', borderTop: isMobile ? '1px solid #EDE9E2' : 'none', paddingLeft: isMobile ? 0 : 40, paddingTop: isMobile ? 20 : 0, width: '100%' }}>
             <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 14 }}>
               AI 盤後摘要
             </div>
@@ -242,7 +245,7 @@ export default function DashboardPage({ portfolio, profile }) {
       {/* Tools row */}
       <motion.div
         variants={STAGGER} initial="hidden" whileInView="show" viewport={{ once: true }}
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}
+        style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 16 : 24 }}
       >
         {/* Backtest card */}
         <motion.div
@@ -251,7 +254,7 @@ export default function DashboardPage({ portfolio, profile }) {
           whileHover={{ y: -3, boxShadow: '0 16px 52px rgba(0,0,0,0.16)', transition: { duration: 0.35 } }}
           whileTap={{ scale: 0.985, transition: { duration: 0.12 } }}
           style={{
-            background: '#3E3A39', padding: '40px 44px', cursor: 'pointer',
+            background: '#3E3A39', padding: isMobile ? '28px 24px' : '40px 44px', cursor: 'pointer',
             boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           }}
         >
@@ -277,7 +280,7 @@ export default function DashboardPage({ portfolio, profile }) {
         <motion.div
           variants={GRID_ITEM}
           whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.07)', transition: { duration: 0.35 } }}
-          style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: '36px 44px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
+          style={{ background: '#FFFFFF', border: '1px solid #EDE9E2', padding: isMobile ? '24px 20px' : '36px 44px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}
         >
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 16 }}>
             Position Sizing

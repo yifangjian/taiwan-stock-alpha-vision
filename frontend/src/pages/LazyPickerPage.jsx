@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { useResponsive } from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -59,7 +60,7 @@ function PickCard({ pick, index }) {
       </div>
 
       {/* Stat row */}
-      <div style={{ display: 'flex', gap: 36, marginBottom: 28, paddingTop: 16, borderTop: '1px solid #F0ECE7' }}>
+      <div style={{ display: 'flex', gap: 24, marginBottom: 28, paddingTop: 16, borderTop: '1px solid #F0ECE7', flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 9, fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 4 }}>
             Market Price
@@ -148,6 +149,7 @@ function PickCard({ pick, index }) {
 }
 
 export default function LazyPickerPage() {
+  const { isMobile } = useResponsive();
   const [budget,   setBudget]   = useState('5000');
   const [riskPref, setRiskPref] = useState('平衡型');
   const [picks,    setPicks]    = useState([]);
@@ -170,7 +172,7 @@ export default function LazyPickerPage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 52px 100px' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '48px 52px 100px' }}>
 
       {/* Page header */}
       <motion.div {...FU()} style={{ marginBottom: 48 }}>
@@ -190,11 +192,11 @@ export default function LazyPickerPage() {
       <motion.div {...FU(0.06)}
         style={{
           background: '#FFFFFF', border: '1px solid #EDE9E2',
-          padding: '40px 44px', marginBottom: 40,
+          padding: isMobile ? '24px 20px' : '40px 44px', marginBottom: 40,
           boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginBottom: 36 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 24 : 40, marginBottom: 36 }}>
           {/* Budget input */}
           <div>
             <label style={{ display: 'block', fontSize: 10, fontFamily: 'monospace', letterSpacing: 1.5, textTransform: 'uppercase', color: '#B5ADA4', marginBottom: 14 }}>
@@ -265,7 +267,7 @@ export default function LazyPickerPage() {
         </div>
 
         {/* Submit row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 12 : 0 }}>
           <p style={{ fontSize: 12, color: '#B5ADA4', fontFamily: 'monospace', margin: 0, lineHeight: 1.7 }}>
             篩選條件：60MA 多頭 + 籌碼集中 · AI 職人觀點 · 平行運算約需 20–40 秒
           </p>

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { useResponsive } from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
@@ -93,6 +94,7 @@ function Message({ msg }) {
 }
 
 export default function AssistantPage({ profile, portfolio }) {
+  const { isMobile } = useResponsive();
   const [messages,  setMessages]  = useState([]);
   const [input,     setInput]     = useState('');
   const [thinking,  setThinking]  = useState(false);
@@ -141,7 +143,7 @@ export default function AssistantPage({ profile, portfolio }) {
   return (
     <div style={{
       maxWidth: 800, margin: '0 auto',
-      padding: '48px 52px 0',
+      padding: isMobile ? '20px 16px 0' : '48px 52px 0',
       display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)',
     }}>
       {/* Header */}

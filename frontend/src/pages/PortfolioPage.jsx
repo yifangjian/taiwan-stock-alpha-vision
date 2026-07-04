@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { supabase } from '../lib/supabase';
 import DayTradeCalculator from '../components/DayTradeCalculator';
+import { useResponsive }  from '../hooks/useResponsive';
 
 const API = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 const FU  = (d = 0) => ({
@@ -173,6 +174,7 @@ function HoldingRow({ h, price, onEdit, onDelete }) {
 
 /* ─── Main page ───────────────────────────────────────────── */
 export default function PortfolioPage({ user }) {
+  const { isMobile } = useResponsive();
   const [tab,        setTab]        = useState('holdings');  // holdings | dividend | compound | daytrade
   const [holdings,   setHoldings]   = useState([]);
   const [prices,     setPrices]     = useState({});
@@ -254,7 +256,7 @@ export default function PortfolioPage({ user }) {
   ];
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 52px 80px' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '48px 52px 80px' }}>
       <motion.div {...FU()} style={{ marginBottom: 40 }}>
         <div style={{ ...LBL, marginBottom: 10 }}>Portfolio</div>
         <h1 style={{ fontFamily: "'Noto Serif TC', serif", fontSize: 32, fontWeight: 400, color: '#3E3A39', margin: 0 }}>
@@ -292,7 +294,7 @@ export default function PortfolioPage({ user }) {
             <>
               {/* Summary cards */}
               {holdings.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
                   {[
                     { label: '投入成本', val: `NT$ ${Math.round(totalCost).toLocaleString()}` },
                     { label: '目前市值', val: totalCur > 0 ? `NT$ ${Math.round(totalCur).toLocaleString()}` : '—' },
