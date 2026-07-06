@@ -555,6 +555,31 @@ def debug_margin_fields(stock_id: str):
     }
 
 
+@app.get("/api/v1/debug/dividend-fields/{stock_id}")
+def debug_dividend_fields(stock_id: str):
+    """Debug: 查看 FinMind 股利資料原始欄位及樣本"""
+    from services.finmind_service import _fm_get
+    from datetime import datetime, timedelta
+    start = (datetime.now() - timedelta(days=365 * 5)).strftime("%Y-%m-%d")
+    raw   = _fm_get("TaiwanStockDividend", stock_id, start)
+    return {
+        "count":  len(raw),
+        "fields": list(raw[0].keys()) if raw else [],
+        "sample": raw[:2] if raw else [],
+    }
+
+
+@app.get("/api/v1/debug/fin-types/{stock_id}")
+def debug_fin_types(stock_id: str):
+    """Debug: 查看 FinMind 財務報表的 type 欄位所有值"""
+    from services.finmind_service import _fm_get
+    from datetime import datetime, timedelta
+    start = (datetime.now() - timedelta(days=365 * 2)).strftime("%Y-%m-%d")
+    raw   = _fm_get("TaiwanStockFinancialStatements", stock_id, start)
+    types = sorted({r.get("type", "") for r in raw})
+    return {"count": len(raw), "types": types, "sample": raw[:2] if raw else []}
+
+
 # ── 融資融券歷史（FinMind）───────────────────────────────────
 @app.get("/api/v1/stock/margin-history/{stock_id}")
 def get_margin_history_data(stock_id: str):
