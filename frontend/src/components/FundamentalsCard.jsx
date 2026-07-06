@@ -126,8 +126,8 @@ function DividendChart({ dividends }) {
 // ── Ratio tab ─────────────────────────────────────────────────────
 
 function RatioChart({ financials }) {
-  const ratioKeys = ['ROE','ROA','毛利率','營業利益率','稅後淨利率'];
-  const colors    = ['#8B6F5C','#B85C38','#5C715E','#C4A882','#857870'];
+  const ratioKeys = ['毛利率','營業利益率','稅後淨利率'];
+  const colors    = ['#5C715E','#B85C38','#C4A882'];
 
   // Merge all ratios onto the same date axis
   const byDate = {};

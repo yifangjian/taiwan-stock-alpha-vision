@@ -31,33 +31,61 @@ def _fm_get(dataset: str, stock_id: str, start_date: str) -> List[Dict]:
         return []
 
 
-_FIN_TARGETS = {"EPS", "ROE", "ROA", "毛利率", "營業利益率", "稅後淨利率"}
+# FinMind TaiwanStockFinancialStatements types we need
+_FIN_NEEDED = {"EPS", "Revenue", "GrossProfit", "OperatingIncome", "IncomeAfterTaxes"}
 
 
 def get_fundamentals(stock_id: str) -> Dict:
     """
     回傳：
-      financials: {EPS: [...], ROE: [...], 毛利率: [...], ...}
+      financials: {EPS: [...], 毛利率: [...], 營業利益率: [...], 稅後淨利率: [...]}
       revenue:    [{date, revenue}, ...]
-      dividends:  [{year, cash, stock}, ...]
+      dividends:  [{year, cash, stock}, ...]  ← 按年合計
     """
     start_3y = (datetime.now() - timedelta(days=365 * 3)).strftime("%Y-%m-%d")
     start_2y = (datetime.now() - timedelta(days=365 * 2)).strftime("%Y-%m-%d")
     start_5y = (datetime.now() - timedelta(days=365 * 5)).strftime("%Y-%m-%d")
 
-    # Financial statements
-    fin_raw    = _fm_get("TaiwanStockFinancialStatements", stock_id, start_3y)
-    financials: Dict[str, List] = {}
+    # ── Financial statements ──────────────────────────────────────
+    fin_raw  = _fm_get("TaiwanStockFinancialStatements", stock_id, start_3y)
+    eps_data: List[Dict] = []
+    by_date:  Dict[str, Dict] = {}
+
     for row in fin_raw:
         t = row.get("type", "")
-        if t not in _FIN_TARGETS:
+        if t not in _FIN_NEEDED:
             continue
-        financials.setdefault(t, []).append({
-            "date":  row.get("date", "")[:7],
-            "value": row.get("value"),
-        })
+        d = row.get("date", "")[:7]
+        v = row.get("value")
+        if t == "EPS":
+            eps_data.append({"date": d, "value": v})
+        else:
+            if d not in by_date:
+                by_date[d] = {}
+            try:
+                by_date[d][t] = float(v) if v is not None else None
+            except (TypeError, ValueError):
+                pass
 
-    # Monthly revenue
+    # Calculate margin ratios from raw amounts
+    margin_map = {
+        "毛利率":    "GrossProfit",
+        "營業利益率": "OperatingIncome",
+        "稅後淨利率": "IncomeAfterTaxes",
+    }
+    margins: Dict[str, List] = {k: [] for k in margin_map}
+    for d in sorted(by_date):
+        rev = by_date[d].get("Revenue") or 0
+        if not rev:
+            continue
+        for label, src in margin_map.items():
+            v = by_date[d].get(src)
+            if v is not None:
+                margins[label].append({"date": d, "value": round(v / rev * 100, 2)})
+
+    financials: Dict[str, List] = {"EPS": eps_data, **margins}
+
+    # ── Monthly revenue ───────────────────────────────────────────
     rev_raw = _fm_get("TaiwanStockMonthRevenue", stock_id, start_2y)
     revenue = sorted([
         {
@@ -67,16 +95,21 @@ def get_fundamentals(stock_id: str) -> Dict:
         for r in rev_raw
     ], key=lambda x: x["date"])[-24:]
 
-    # Dividend
-    div_raw   = _fm_get("TaiwanStockDividend", stock_id, start_5y)
-    dividends = [
-        {
-            "year":  r.get("year"),
-            "cash":  float(r.get("cash_earnings_distribution") or 0),
-            "stock": float(r.get("StockEarningsDistribution") or 0),
-        }
-        for r in div_raw
-    ][-10:]
+    # ── Dividend — aggregate quarterly rows into annual totals ────
+    div_raw: List[Dict] = _fm_get("TaiwanStockDividend", stock_id, start_5y)
+    div_by_year: Dict[str, Dict] = {}
+    for r in div_raw:
+        yr = r.get("year", "") or ""
+        # "110年第1季" / "110年上半年" → "110年"
+        base = yr.split("第")[0].split("上")[0].split("下")[0].strip()
+        if not base:
+            continue
+        if base not in div_by_year:
+            div_by_year[base] = {"year": base, "cash": 0.0, "stock": 0.0}
+        div_by_year[base]["cash"]  += float(r.get("CashEarningsDistribution",  0) or 0)
+        div_by_year[base]["stock"] += float(r.get("StockEarningsDistribution", 0) or 0)
+
+    dividends = sorted(div_by_year.values(), key=lambda x: x["year"])[-10:]
 
     return {
         "stock_id":   stock_id,
