@@ -535,10 +535,16 @@ def get_institutional_flow(stock_id: str):
 
 @app.get("/api/v1/debug/inst-names/{stock_id}")
 def debug_inst_names(stock_id: str):
-    """Debug: 查看 FinMind 回傳的三大法人 name 欄位原始值"""
-    from services.finmind_service import get_institutional_raw_names
-    names = get_institutional_raw_names(stock_id)
-    return {"stock_id": stock_id, "names": names, "count": len(names)}
+    """Debug: 查看 FinMind 三大法人完整欄位與樣本"""
+    from services.finmind_service import _fm_get
+    from datetime import datetime, timedelta
+    start = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+    raw   = _fm_get("TaiwanStockInstitutionalInvestorsBuySell", stock_id, start)
+    return {
+        "count":  len(raw),
+        "fields": list(raw[0].keys()) if raw else [],
+        "sample": raw[:3] if raw else [],
+    }
 
 
 @app.get("/api/v1/debug/margin-fields/{stock_id}")
